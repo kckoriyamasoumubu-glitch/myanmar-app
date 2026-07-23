@@ -143,23 +143,7 @@
   .score-ring span{position:relative;z-index:1;}
   .score-label{font-size:13px;color:var(--ink-soft);}
 
-  .self-check-row{margin-top:16px;}
-  .self-check-buttons{display:flex;gap:10px;margin-top:8px;flex-wrap:wrap;}
-  button.btn-self{flex:1;min-width:120px;padding:12px 10px;font-size:14px;}
-  button.btn-self.good{background:var(--ok);color:#fff;}
-  button.btn-self.mid{background:var(--gold);color:var(--ink);}
-  button.btn-self.bad{background:var(--bad);color:#fff;}
-
   canvas#pitchCanvas{width:100%;height:110px;display:block;margin-top:14px;border-radius:10px;background:var(--paper-dim);border:1px solid var(--line);}
-
-  .advice{
-    margin-top:16px;padding:14px 16px;border-radius:10px;
-    background:rgba(201,162,39,0.10);border:1px solid rgba(201,162,39,0.4);
-    font-size:14px;color:var(--ink);
-  }
-  .advice.bad{background:rgba(168,60,60,0.08);border-color:rgba(168,60,60,0.35);}
-  .advice.mid{background:rgba(168,93,31,0.08);border-color:rgba(168,93,31,0.35);}
-  .advice.good{background:rgba(63,122,79,0.08);border-color:rgba(63,122,79,0.35);}
 
   .disclaimer{
     font-size:12px;color:var(--ink-soft);
@@ -199,10 +183,10 @@
     </div>
     <div class="status-line" id="googleTtsStatus">「Google翻訳の音声で再生」は登録不要ですぐ使えます（非公式のため将来使えなくなる可能性があります）。</div>
 
-    <div class="row" style="display:none;">
-      <button class="action btn-outline" id="recordRefBtn">🎯 お手本のリズムを記録する（初回のみ）</button>
+    <div class="row">
+      <button class="action btn-outline" id="recordRefBtn">🎯 お手本の声をマイクで記録して比較用に保存（初回のみ）</button>
     </div>
-    <div class="status-line" id="refStatus" style="display:none;"></div>
+    <div class="status-line" id="refStatus">このフレーズのお手本リズムはまだ記録されていません（下のボタンで記録できます）。</div>
 
     <div class="audio-lib" id="audioLib">
       <p class="diff-note" style="margin-top:0;">
@@ -234,34 +218,30 @@
     </div>
     <div class="status-line" id="micStatus">マイクの使用許可が必要です。「録音開始」を押すと許可を求めます。</div>
     <audio id="playback" controls style="display:none;"></audio>
+    <div class="row">
+      <button class="action btn-gold" id="playBothBtn" disabled>🔁 お手本→自分の発音を続けて再生</button>
+    </div>
+    <div class="status-line" id="playBothStatus">録音が終わると、お手本の直後に自分の発音を自動再生して聞き比べられます。</div>
   </section>
 
   <!-- 3. 結果 -->
   <section class="card">
-    <h2><span class="num">3</span>聞き比べてセルフチェック</h2>
+    <h2><span class="num">3</span>客観比較（お手本との声の高低パターン）</h2>
 
-    <div class="result-block">
-      <div class="status-line">上の「① お手本フレーズ」の音声と、「② 自分の発音」の再生を、続けて聞き比べてみましょう。発音・声の高低（トーン）・区切り方が近いか、耳で確認します。</div>
+    <div class="score-row">
+      <div class="score-ring" id="comparisonRing" style="--pct:0;"><span id="comparisonScoreNum">–</span></div>
+      <div class="score-label">お手本と自分の発音の「声の高低（トーン）パターン」の近さ。上の「🎯 お手本の声をマイクで記録して比較用に保存」を一度行うと、以降この録音のたびに自動採点されます。</div>
     </div>
 
     <canvas id="pitchCanvas" width="760" height="110"></canvas>
-    <div class="diff-note" id="pitchLegend">録音すると、声の高さ（基本周波数）の推移を表示します。お手本の音声と交互に聞きながら、形が近いか参考にしてください。</div>
-
-    <div class="self-check-row">
-      <div class="status-line">聞き比べた結果はどうでしたか？（自己判定・記録などは行われません）</div>
-      <div class="self-check-buttons">
-        <button class="action btn-self good" id="selfGoodBtn">😀 よく言えた</button>
-        <button class="action btn-self mid" id="selfMidBtn">🙂 まあまあ近い</button>
-        <button class="action btn-self bad" id="selfBadBtn">🔁 もう一度練習</button>
-      </div>
-    </div>
-
-    <div class="advice" id="adviceBox">お手本を聞いてから録音し、聞き比べてみましょう。</div>
+    <div class="diff-note" id="pitchLegend">録音すると、声の高さ（基本周波数）の推移を表示します。（グラフ：<span style="color:#c9a227;font-weight:700;">■お手本</span> / <span style="color:#7a2e2e;font-weight:700;">■あなた</span>）</div>
+    <div class="diff-note" id="comparisonStatus">お手本のリズムを記録すると、ここに比較結果が表示されます。</div>
 
     <div class="disclaimer">
       <strong>このアプリの限界について：</strong>
       「Google翻訳の音声で再生」は非公式の方法のため、将来Google側の仕様変更で使えなくなる可能性があります。
-      以前このアプリには、録音した声をブラウザ内蔵の音声認識でテキスト化し自動採点する機能がありましたが、ミャンマー語への対応が不安定で実用的な判定ができなかったため廃止し、上記の「聞き比べてセルフチェック」方式に変更しました。
+      「声の高低パターンの近さ」は、Googleの音声をスピーカーで再生しマイクで録音して比較する仕組みのため、周囲の騒音やスピーカー音量の影響を受けやすく、あくまで参考値です。声調（トーン）そのものの絶対的な正誤を機械的に判定する技術ではありません。
+      以前あった、録音した声をブラウザ内蔵の音声認識でテキスト化する自動採点機能は、ミャンマー語への対応が不安定だったため廃止しました。
       発音の正確さの最終確認は、可能な限りミャンマー語ネイティブスピーカーへの確認も併用してください。
     </div>
   </section>
@@ -271,7 +251,6 @@
 
 <script>
 (function(){
-  // ---------- 保存の仕組み（ダウンロードして単体で開いても動くよう、ブラウザ標準のlocalStorageを使用） ----------
   const localDB = {
     async get(key){
       try{
@@ -299,15 +278,12 @@
   const micStatus = document.getElementById('micStatus');
   const levelFill = document.getElementById('levelFill');
   const playback = document.getElementById('playback');
+  const playBothBtn = document.getElementById('playBothBtn');
+  const playBothStatus = document.getElementById('playBothStatus');
   const pitchCanvas = document.getElementById('pitchCanvas');
   const pitchLegend = document.getElementById('pitchLegend');
-  const adviceBox = document.getElementById('adviceBox');
-  const selfGoodBtn = document.getElementById('selfGoodBtn');
-  const selfMidBtn = document.getElementById('selfMidBtn');
-  const selfBadBtn = document.getElementById('selfBadBtn');
   const pctx = pitchCanvas.getContext('2d');
 
-  // ---------- プリセット例文 ----------
   const presets = [
     {label:'こんにちは', text:'မင်္ဂလာပါ'},
     {label:'ありがとう', text:'ကျေးဇူးတင်ပါတယ်'},
@@ -323,7 +299,6 @@
     presetRow.appendChild(b);
   });
 
-  // ---------- Google翻訳の音声（非公式・登録不要・今すぐ動く） ----------
   const googleTtsBtn = document.getElementById('googleTtsBtn');
   const googleTtsStatus = document.getElementById('googleTtsStatus');
   let googleTtsAudio = null;
@@ -346,13 +321,12 @@
     });
   });
 
-  // ---------- 保存済みネイティブ音声（Musely等でダウンロードしたファイルをアップロード） ----------
   const audioUpload = document.getElementById('audioUpload');
   const audioLibStatus = document.getElementById('audioLibStatus');
   const cachedAudioControls = document.getElementById('cachedAudioControls');
   const playCachedBtn = document.getElementById('playCachedBtn');
   const deleteCachedBtn = document.getElementById('deleteCachedBtn');
-  let cachedAudioObj = null; // { phrase, base64, mime }
+  let cachedAudioObj = null;
   let cachedAudioEl = null;
 
   function hashPhrase(str){
@@ -385,7 +359,7 @@
           return;
         }
       }
-    }catch(e){ /* 未保存の場合はエラーになるが正常な状態 */ }
+    }catch(e){}
     audioLibStatus.textContent = 'このフレーズの保存済み音声：なし（Muselyで生成→アップロードすると保存されます）';
     audioLibStatus.className = 'status-line';
     cachedAudioControls.style.display = 'none';
@@ -441,9 +415,11 @@
     await refreshCachedAudioUI();
   });
 
-  // ---------- お手本のリズム（声の高低パターン）を記録して比較する ----------
   const recordRefBtn = document.getElementById('recordRefBtn');
   const refStatus = document.getElementById('refStatus');
+  const comparisonStatus = document.getElementById('comparisonStatus');
+  const comparisonRing = document.getElementById('comparisonRing');
+  const comparisonScoreNum = document.getElementById('comparisonScoreNum');
 
   function refKeyFor(text){ return 'refpitch-' + hashPhrase(text); }
 
@@ -459,45 +435,245 @@
       if(result && result.value){
         const obj = JSON.parse(result.value);
         if(obj.phrase === text){
-          refStatus.textContent = 'このフレーズのお手本リズムは記録済みです。';
+          refStatus.textContent = 'このフレーズのお手本リズムは記録済みです。「録音開始」で発音すると自動で比較されます。';
           refStatus.className = 'status-line ok';
           return;
         }
       }
-    }catch(e){ /* 未記録の場合はエラーになるが正常な状態 */ }
-    refStatus.textContent = 'このフレーズのお手本リズムはまだ記録されていません。';
+    }catch(e){}
+    refStatus.textContent = 'このフレーズのお手本リズムはまだ記録されていません（下のボタンで記録できます）。';
     refStatus.className = 'status-line';
   }
 
-  // フレーズ変更時に保存済み音声の有無を再確認
+  async function recordReference(){
+    const text = phraseInput.value.trim();
+    if(!text){ refStatus.textContent = '先にお手本フレーズを入力してください。'; return; }
+
+    refStatus.textContent = 'マイクの準備をしています…';
+    refStatus.className = 'status-line';
+    let stream;
+    try{
+      stream = await ensureMicStream();
+    }catch(err){
+      refStatus.textContent = 'マイクへのアクセスが許可されませんでした：' + err.message;
+      refStatus.className = 'status-line warn';
+      return;
+    }
+
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const src = ctx.createMediaStreamSource(stream);
+    const refAnalyser = ctx.createAnalyser();
+    refAnalyser.fftSize = 2048;
+    src.connect(refAnalyser);
+
+    const contour = [];
+    let capturing = true;
+    let maxRmsSeen = 0;
+    function loop(){
+      if(!capturing) return;
+      const buf = new Float32Array(refAnalyser.fftSize);
+      refAnalyser.getFloatTimeDomainData(buf);
+      let rms = 0;
+      for(let i=0;i<buf.length;i++) rms += buf[i]*buf[i];
+      rms = Math.sqrt(rms/buf.length);
+      if(rms > maxRmsSeen) maxRmsSeen = rms;
+      const freq = autoCorrelate(buf, ctx.sampleRate, 0.0009);
+      contour.push(freq > 60 && freq < 500 ? freq : 0);
+      requestAnimationFrame(loop);
+    }
+
+    const url = 'https://translate.google.com/translate_tts?ie=UTF-8&q=' + encodeURIComponent(text) + '&tl=my&client=tw-ob';
+    const audioEl = new Audio(url);
+    refStatus.textContent = '再生中…スピーカーの音をマイクで記録しています（周囲を静かにしてお待ちください）。';
+    refStatus.className = 'status-line';
+
+    try{
+      await new Promise((resolve, reject)=>{
+        audioEl.addEventListener('ended', resolve, {once:true});
+        audioEl.addEventListener('error', ()=>reject(new Error('音声の再生に失敗しました')), {once:true});
+        loop();
+        audioEl.play().catch(reject);
+      });
+    }catch(err){
+      capturing = false;
+      src.disconnect();
+      ctx.close();
+      refStatus.textContent = '記録に失敗しました：' + err.message;
+      refStatus.className = 'status-line warn';
+      return;
+    }
+
+    capturing = false;
+    src.disconnect();
+    ctx.close();
+
+    const voicedCount = contour.filter(v=>v>0).length;
+    if(voicedCount < 5){
+      refStatus.textContent = '記録に失敗しました（マイクが拾った最大音量レベル：' + maxRmsSeen.toFixed(4) + '）。スピーカーの音量を上げるか、マイクをスピーカーに近づけて再度お試しください。';
+      refStatus.className = 'status-line warn';
+      return;
+    }
+
+    try{
+      const saveResult = await localDB.set(refKeyFor(text), JSON.stringify({phrase: text, contour}));
+      if(!saveResult) throw new Error('保存に失敗しました');
+      refStatus.textContent = 'お手本のリズムを記録しました。この後「録音開始」で発音すると、自動で比較されます。';
+      refStatus.className = 'status-line ok';
+    }catch(err){
+      refStatus.textContent = '保存に失敗しました：' + err.message;
+      refStatus.className = 'status-line warn';
+    }
+  }
+
+  recordRefBtn.addEventListener('click', recordReference);
+
+  function resampleToLength(arr, targetLen){
+    const n = arr.length;
+    if(n === 0) return new Array(targetLen).fill(0);
+    if(n === 1) return new Array(targetLen).fill(arr[0]);
+    const out = new Array(targetLen);
+    for(let i=0;i<targetLen;i++){
+      const pos = (i/(targetLen-1)) * (n-1);
+      const lo = Math.floor(pos), hi = Math.min(n-1, Math.ceil(pos));
+      const frac = pos - lo;
+      out[i] = arr[lo] * (1-frac) + arr[hi] * frac;
+    }
+    return out;
+  }
+
+  function zscore(arr){
+    const mean = arr.reduce((s,v)=>s+v,0) / arr.length;
+    const variance = arr.reduce((s,v)=>s+(v-mean)*(v-mean),0) / arr.length;
+    const std = Math.sqrt(variance) || 1;
+    return arr.map(v => (v-mean)/std);
+  }
+
+  function compareContours(userRaw, refRaw){
+    const userVoiced = userRaw.filter(v=>v>0);
+    const refVoiced = refRaw.filter(v=>v>0);
+    if(userVoiced.length < 5 || refVoiced.length < 5) return null;
+
+    const N = 30;
+    const userR = zscore(resampleToLength(userVoiced, N));
+    const refR = zscore(resampleToLength(refVoiced, N));
+
+    let sumSq = 0;
+    const segCount = 3, segLen = N/segCount;
+    const segErr = [0,0,0];
+    for(let i=0;i<N;i++){
+      const d = userR[i]-refR[i];
+      sumSq += d*d;
+      const seg = Math.min(segCount-1, Math.floor(i/segLen));
+      segErr[seg] += d*d;
+    }
+    const rmse = Math.sqrt(sumSq/N);
+    const score = Math.max(0, Math.min(100, Math.round(100 * (1 - rmse/2.2))));
+
+    const segLabels = ['前半','中盤','後半'];
+    let worstSeg = 0;
+    for(let s=1;s<segCount;s++){ if(segErr[s] > segErr[worstSeg]) worstSeg = s; }
+
+    return { score, worstSegLabel: segLabels[worstSeg], userR, refR };
+  }
+
+  function updateComparisonScore(score){
+    comparisonRing.style.setProperty('--pct', score);
+    comparisonScoreNum.textContent = score + '%';
+  }
+
+  function drawComparisonChart(userR, refR){
+    const w = pitchCanvas.width, h = pitchCanvas.height;
+    pctx.clearRect(0,0,w,h);
+    pctx.strokeStyle = 'rgba(27,42,74,0.15)';
+    pctx.beginPath();
+    pctx.moveTo(0,h/2); pctx.lineTo(w,h/2); pctx.stroke();
+
+    const zMin=-2.5, zMax=2.5, range=zMax-zMin;
+    function drawLine(arr, color, lineW){
+      pctx.strokeStyle = color;
+      pctx.lineWidth = lineW;
+      pctx.beginPath();
+      arr.forEach((z,i)=>{
+        const x = (i/(arr.length-1))*w;
+        const clamped = Math.max(zMin, Math.min(zMax, z));
+        const y = h - ((clamped-zMin)/range)*(h-10) - 5;
+        if(i===0) pctx.moveTo(x,y); else pctx.lineTo(x,y);
+      });
+      pctx.stroke();
+    }
+    drawLine(refR, '#c9a227', 3);
+    drawLine(userR, '#7a2e2e', 2);
+  }
+
+  async function runComparisonIfAvailable(){
+    const text = phraseInput.value.trim();
+    if(!text) return;
+    let refData = null;
+    try{
+      const result = await localDB.get(refKeyFor(text));
+      if(result && result.value){
+        const obj = JSON.parse(result.value);
+        if(obj.phrase === text) refData = obj.contour;
+      }
+    }catch(e){}
+
+    if(!refData){
+      comparisonStatus.textContent = 'お手本のリズムがまだ記録されていません。上の「お手本の声をマイクで記録して比較用に保存」を押すと、次回から自動で比較できます。';
+      comparisonStatus.className = 'status-line';
+      updateComparisonScore(0);
+      return;
+    }
+
+    const cmp = compareContours(pitchSeries, refData);
+    if(!cmp){
+      comparisonStatus.textContent = '声を十分に拾えなかったため比較できませんでした。もう少しはっきり発音してもう一度録音してみてください。';
+      comparisonStatus.className = 'status-line warn';
+      updateComparisonScore(0);
+      return;
+    }
+
+    updateComparisonScore(cmp.score);
+    drawComparisonChart(cmp.userR, cmp.refR);
+    let cls = 'status-line';
+    if(cmp.score >= 70) cls = 'status-line ok';
+    else if(cmp.score < 40) cls = 'status-line warn';
+    comparisonStatus.innerHTML = 'お手本と比べて、「<strong>' + cmp.worstSegLabel + '</strong>」部分の声の高低パターンが最も異なっていました。そこを意識してもう一度発音してみましょう。（グラフ：<span style="color:#c9a227;font-weight:700;">■お手本</span> / <span style="color:#7a2e2e;font-weight:700;">■あなた</span>）';
+    comparisonStatus.className = cls;
+  }
+
   phraseInput.addEventListener('change', ()=>{ refreshCachedAudioUI(); refreshReferenceStatus(); });
   phraseInput.addEventListener('blur', ()=>{ refreshCachedAudioUI(); refreshReferenceStatus(); });
   refreshCachedAudioUI();
   refreshReferenceStatus();
 
-  // ---------- セルフチェック ----------
-  function showAdvice(level, text){
-    adviceBox.className = 'advice ' + level;
-    adviceBox.textContent = text;
-  }
+  playBothBtn.addEventListener('click', ()=>{
+    const text = phraseInput.value.trim();
+    if(!text || !playback.src) return;
+    playBothBtn.disabled = true;
+    playBothStatus.textContent = 'お手本を再生中…';
+    const url = 'https://translate.google.com/translate_tts?ie=UTF-8&q=' + encodeURIComponent(text) + '&tl=my&client=tw-ob';
+    const refAudio = new Audio(url);
+    refAudio.referrerPolicy = 'no-referrer';
+    refAudio.addEventListener('ended', ()=>{
+      playBothStatus.textContent = '自分の発音を再生中…';
+      playback.currentTime = 0;
+      playback.play();
+    }, {once:true});
+    playback.addEventListener('ended', ()=>{
+      playBothStatus.textContent = '再生が終わりました。もう一度「続けて再生」で聞き比べられます。';
+      playBothBtn.disabled = false;
+    }, {once:true});
+    refAudio.play().catch(()=>{
+      playBothStatus.textContent = 'お手本の再生に失敗しました。もう一度お試しください。';
+      playBothBtn.disabled = false;
+    });
+  });
 
-  selfGoodBtn.addEventListener('click', ()=>{
-    showAdvice('good', '良い調子です。この感覚を覚えておいて、次のフレーズにも挑戦してみましょう。');
-  });
-  selfMidBtn.addEventListener('click', ()=>{
-    showAdvice('mid', 'おおむね近い発音です。お手本音声をもう一度聞いて、声の高低（トーン）が近づくように意識して発音してみましょう。');
-  });
-  selfBadBtn.addEventListener('click', ()=>{
-    showAdvice('bad', 'お手本をゆっくり再生して聞き直し、区切って発音してみてください。ミャンマー語は声調（トーン）で意味が変わるため、下のピッチグラフで自分の声の高低の変化も確認してみましょう。');
-  });
-
-  // ---------- 録音 & ピッチ解析 ----------
   let mediaStream, audioCtx, analyser, sourceNode, dataArray, mediaRecorder, chunks=[];
   let recording = false;
   let pitchSeries = [];
   let recStartTime = 0;
 
-  // マイクは一度許可されたら、ページを開いている間ずっと使い回す（毎回stopすると許可を再度求められるため）
   let micStreamPromise = null;
   function ensureMicStream(){
     if(!micStreamPromise){
@@ -539,7 +715,6 @@
     pctx.stroke();
   }
 
-  // 自己相関法による基本周波数推定
   function autoCorrelate(buf, sampleRate, rmsThreshold){
     const SIZE = buf.length;
     let rms = 0;
@@ -609,6 +784,8 @@
     pitchLegend.textContent = '録音中の声の高さ（基本周波数）の推移：';
 
     chunks = [];
+    playBothBtn.disabled = true;
+    playBothStatus.textContent = '録音が終わると、お手本の直後に自分の発音を自動再生して聞き比べられます。';
     try{
       mediaRecorder = new MediaRecorder(mediaStream);
       mediaRecorder.ondataavailable = (e)=>{ if(e.data.size>0) chunks.push(e.data); };
@@ -617,6 +794,7 @@
         const url = URL.createObjectURL(blob);
         playback.src = url;
         playback.style.display = 'block';
+        playBothBtn.disabled = false;
       };
       mediaRecorder.start();
     }catch(err){
@@ -626,7 +804,6 @@
     recording = true;
     recBtn.textContent = '⏹ 録音停止';
     recBtn.classList.add('recording');
-    showAdvice('mid', '録音中…はっきりと発音してください。');
 
     recStartTime = Date.now();
     recTimerInterval = setInterval(()=>{
@@ -651,9 +828,10 @@
     if(sourceNode) sourceNode.disconnect();
     if(audioCtx) audioCtx.close();
 
-    micStatus.textContent = '録音が完了しました。結果は下に表示されます。';
+    micStatus.textContent = '録音が完了しました。下の「客観比較」欄と「続けて再生」ボタンをご確認ください。';
     micStatus.className = 'status-line ok';
-    showAdvice('mid', '再生ボタンでお手本と自分の発音を聞き比べ、下のボタンで自己判定してみましょう。');
+
+    runComparisonIfAvailable();
   }
 
   recBtn.addEventListener('click', ()=>{
