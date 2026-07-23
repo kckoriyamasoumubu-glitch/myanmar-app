@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ミャンマー語 発音練習</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Myanmar:wght@400;500;700&family=Noto+Serif:wght@400;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1b2a4a;
+    --ink-soft:#2c3f66;
+    --gold:#c9a227;
+    --gold-soft:#e4c766;
+    --paper:#f6f1e7;
+    --paper-dim:#ece3d2;
+    --lac:#7a2e2e;
+    --ok:#3f7a4f;
+    --warn:#a85d1f;
+    --bad:#a83c3c;
+    --line:rgba(27,42,74,0.14);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(1200px 600px at 10% -10%, rgba(201,162,39,0.10), transparent 60%),
+      var(--paper);
+    color:var(--ink);
+    font-family:'Noto Sans JP', sans-serif;
+    line-height:1.6;
+  }
+  .wrap{max-width:820px;margin:0 auto;padding:28px 20px 64px;}
+
+  header{margin-bottom:28px;}
+  .eyebrow{
+    font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--lac);font-weight:700;margin-bottom:6px;
+  }
+  h1{
+    font-family:'Noto Serif', serif;
+    font-size:28px;margin:0 0 8px;color:var(--ink);
+  }
+  .lede{color:var(--ink-soft);font-size:14px;max-width:60ch;}
+
+  .card{
+    background:#fffdf8;
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:22px 22px 24px;
+    margin-bottom:18px;
+    box-shadow:0 1px 2px rgba(27,42,74,0.04);
+  }
+  .card h2{
+    font-family:'Noto Serif', serif;
+    font-size:15px;margin:0 0 14px;color:var(--ink);
+    display:flex;align-items:center;gap:8px;
+  }
+  .card h2 .num{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:22px;height:22px;border-radius:50%;
+    background:var(--ink);color:var(--paper);
+    font-size:11px;font-weight:700;
+  }
+
+  textarea{
+    width:100%;min-height:90px;resize:vertical;
+    font-family:'Noto Sans Myanmar', sans-serif;
+    font-size:22px;
+    padding:14px 16px;
+    border:1px solid var(--line);
+    border-radius:10px;
+    background:var(--paper-dim);
+    color:var(--ink);
+  }
+  textarea:focus{outline:2px solid var(--gold-soft);outline-offset:1px;}
+
+  .presets{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;}
+  .preset-btn{
+    font-family:'Noto Sans Myanmar','Noto Sans JP',sans-serif;
+    font-size:13px;padding:6px 12px;border-radius:999px;
+    border:1px solid var(--line);background:#fff;color:var(--ink-soft);
+    cursor:pointer;
+  }
+  .preset-btn:hover{border-color:var(--gold);color:var(--ink);}
+
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:14px;}
+
+  button.action{
+    display:inline-flex;align-items:center;gap:8px;
+    font-family:'Noto Sans JP',sans-serif;
+    font-size:14px;font-weight:500;
+    padding:11px 18px;border-radius:10px;border:none;
+    cursor:pointer;transition:transform .05s ease, opacity .15s ease;
+  }
+  button.action:active{transform:scale(0.98);}
+  button.action:disabled{opacity:.45;cursor:not-allowed;}
+
+  .btn-gold{background:var(--gold);color:var(--ink);}
+  .btn-gold:hover:not(:disabled){background:var(--gold-soft);}
+  .btn-ink{background:var(--ink);color:var(--paper);}
+  .btn-ink:hover:not(:disabled){background:var(--ink-soft);}
+  .btn-lac{background:var(--lac);color:#fff;}
+  .btn-lac.recording{background:var(--bad);}
+  .btn-outline{background:transparent;color:var(--ink);border:1px solid var(--line) !important;}
+
+  .status-line{font-size:12.5px;color:var(--ink-soft);margin-top:8px;min-height:1.4em;}
+  .status-line.warn{color:var(--warn);}
+  .status-line.ok{color:var(--ok);}
+
+  .mic-visual{
+    display:flex;align-items:center;gap:12px;margin-top:14px;
+  }
+  .level-bar{
+    flex:1;height:8px;background:var(--paper-dim);border-radius:99px;overflow:hidden;
+    border:1px solid var(--line);
+  }
+  .level-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--gold),var(--lac));transition:width .06s linear;}
+
+  .result-block{margin-top:6px;}
+  .recognized{
+    font-family:'Noto Sans Myanmar',sans-serif;
+    font-size:20px;padding:12px 14px;
+    background:var(--paper-dim);border-radius:10px;
+    min-height:1.6em;
+  }
+  .diff-note{font-size:12px;color:var(--ink-soft);margin-top:6px;}
+  .diff del{background:rgba(168,60,60,0.18);text-decoration:none;border-bottom:2px solid var(--bad);}
+  .diff ins{background:rgba(63,122,79,0.18);text-decoration:none;border-bottom:2px solid var(--ok);}
+
+  .score-row{display:flex;align-items:center;gap:14px;margin-top:14px;}
+  .score-ring{
+    width:64px;height:64px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-weight:700;font-size:15px;color:var(--ink);
+    background:conic-gradient(var(--gold) calc(var(--pct,0)*1%), var(--paper-dim) 0);
+    position:relative;
+  }
+  .score-ring::before{
+    content:"";position:absolute;inset:6px;border-radius:50%;background:#fffdf8;
+  }
+  .score-ring span{position:relative;z-index:1;}
+  .score-label{font-size:13px;color:var(--ink-soft);}
+
+  canvas#pitchCanvas{width:100%;height:110px;display:block;margin-top:14px;border-radius:10px;background:var(--paper-dim);border:1px solid var(--line);}
+
+  .advice{
+    margin-top:16px;padding:14px 16px;border-radius:10px;
+    background:rgba(201,162,39,0.10);border:1px solid rgba(201,162,39,0.4);
+    font-size:14px;color:var(--ink);
+  }
+  .advice.bad{background:rgba(168,60,60,0.08);border-color:rgba(168,60,60,0.35);}
+  .advice.mid{background:rgba(168,93,31,0.08);border-color:rgba(168,93,31,0.35);}
+  .advice.good{background:rgba(63,122,79,0.08);border-color:rgba(63,122,79,0.35);}
+
+  .disclaimer{
+    font-size:12px;color:var(--ink-soft);
+    border-top:1px dashed var(--line);
+    margin-top:16px;padding-top:12px;
+  }
+  .disclaimer strong{color:var(--ink);}
+
+  audio{width:100%;margin-top:10px;}
+
+  .footer-note{
+    font-size:11.5px;color:var(--ink-soft);text-align:center;margin-top:24px;opacity:.8;
+  }
+
+  .audio-lib{
+    margin-top:16px;padding-top:16px;border-top:1px dashed var(--line);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Myanmar Pronunciation Trainer</div>
+    <h1>ミャンマー語 発音練習</h1>
+    <p class="lede">お手本フレーズを聞き、自分の発音を録音して、認識結果との一致度・声の高低の変化を確認できます。</p>
+  </header>
+
+  <!-- 1. お手本 -->
+  <section class="card">
+    <h2><span class="num">1</span>お手本フレーズ</h2>
+    <textarea id="phraseInput" placeholder="ミャンマー語の例文を入力してください">မင်္ဂလာပါ</textarea>
+    <div class="presets" id="presetRow"></div>
+
+    <div class="row">
+      <button class="action btn-lac" id="googleTtsBtn">🔊 Google翻訳の音声で再生</button>
+    </div>
+    <div class="status-line" id="googleTtsStatus">「Google翻訳の音声で再生」は登録不要ですぐ使えます（非公式のため将来使えなくなる可能性があります）。</div>
+
+    <div class="row" style="display:none;">
+      <button class="action btn-outline" id="recordRefBtn">🎯 お手本のリズムを記録する（初回のみ）</button>
+    </div>
+    <div class="status-line" id="refStatus" style="display:none;"></div>
+
+    <div class="audio-lib" id="audioLib">
+      <p class="diff-note" style="margin-top:0;">
+        上の「Google翻訳の音声で再生」で十分な場合は、以下は不要です。他の外部サイトで生成した音声ファイルをお持ちの場合のみ、こちらに保存してご利用ください。
+      </p>
+      <div class="row" style="margin-top:0;">
+        <label class="action btn-ink" style="cursor:pointer;">
+          📁 生成した音声ファイルを保存
+          <input type="file" id="audioUpload" accept="audio/*" style="display:none;">
+        </label>
+      </div>
+      <div class="status-line" id="audioLibStatus">このフレーズの保存済み音声：なし</div>
+      <div class="row" id="cachedAudioControls" style="display:none;">
+        <button class="action btn-gold" id="playCachedBtn">▶ 保存音声を再生</button>
+        <button class="action btn-outline" id="deleteCachedBtn">削除</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. 録音 -->
+  <section class="card">
+    <h2><span class="num">2</span>自分の発音を録音</h2>
+    <div class="row">
+      <button class="action btn-lac" id="recBtn">🎙 録音開始</button>
+      <span id="recTimer" class="status-line" style="min-height:auto;">00:00</span>
+    </div>
+    <div class="mic-visual">
+      <div class="level-bar"><div class="level-fill" id="levelFill"></div></div>
+    </div>
+    <div class="status-line" id="micStatus">マイクの使用許可が必要です。「録音開始」を押すと許可を求めます。</div>
+    <audio id="playback" controls style="display:none;"></audio>
+  </section>
+
+  <!-- 3. 結果 -->
+  <section class="card">
+    <h2><span class="num">3</span>認識結果とフィードバック</h2>
+
+    <div class="result-block">
+      <div class="status-line">認識されたテキスト（音声認識）</div>
+      <div class="recognized" id="recognizedText">まだ録音していません</div>
+      <div class="diff-note" id="diffOutput"></div>
+    </div>
+
+    <div class="score-row">
+      <div class="score-ring" id="scoreRing" style="--pct:0;"><span id="scoreNum">–</span></div>
+      <div class="score-label">お手本との文字一致率（音声認識が使えない環境では「-」のままになります）</div>
+    </div>
+
+    <div class="score-row" style="display:none;">
+      <div class="score-ring" id="comparisonRing" style="--pct:0;"><span id="comparisonScoreNum">–</span></div>
+      <div class="score-label">お手本とのリズム・声の高低パターンの近さ（実験的機能・参考値）</div>
+    </div>
+
+    <canvas id="pitchCanvas" width="760" height="110"></canvas>
+    <div class="diff-note" id="pitchLegend">録音すると、声の高さ（基本周波数）の推移を表示します。</div>
+    <div class="diff-note" id="comparisonStatus" style="display:none;"></div>
+
+    <div class="advice" id="adviceBox">録音するとここにアドバイスが表示されます。</div>
+
+    <div class="disclaimer">
+      <strong>このアプリの限界について：</strong>
+      「Google翻訳の音声で再生」は非公式の方法のため、将来Google側の仕様変更で使えなくなる可能性があります。発音の録音認識（自分の声のテキスト化）はブラウザ内蔵の音声認識に依存しており、端末やブラウザによって精度が異なり、対応を保証するものではありません。
+      「リズム・声の高低パターンの近さ」は、声の高さの変化の形（メロディーの上下）を単純化して比較する実験的な指標であり、発音の正誤を厳密に判定するものではありません。
+      また「唇の形」「調音位置」「声調（トーン）の絶対的な正誤」を機械的に判定する技術的手段は用いていません。
+      実際の発音の正確さは、可能な限りミャンマー語ネイティブスピーカーの確認も併用してください。
+    </div>
+  </section>
+
+  <p class="footer-note">Web Speech API / Web Audio API を使用（ブラウザ内で完結。録音データは外部送信されません）</p>
+</div>
+
+<script>
+(function(){
+  // ---------- 保存の仕組み（ダウンロードして単体で開いても動くよう、ブラウザ標準のlocalStorageを使用） ----------
+  const localDB = {
+    async get(key){
+      try{
+        const raw = localStorage.getItem('mpt:' + key);
+        if(raw === null || raw === undefined) return null;
+        return { key, value: raw };
+      }catch(e){ return null; }
+    },
+    async set(key, value){
+      try{
+        localStorage.setItem('mpt:' + key, value);
+        return { key, value };
+      }catch(e){ return null; }
+    },
+    async delete(key){
+      try{ localStorage.removeItem('mpt:' + key); }catch(e){}
+      return { key, deleted:true };
+    }
+  };
+
+  const phraseInput = document.getElementById('phraseInput');
+  const presetRow = document.getElementById('presetRow');
+  const recBtn = document.getElementById('recBtn');
+  const recTimer = document.getElementById('recTimer');
+  const micStatus = document.getElementById('micStatus');
+  const levelFill = document.getElementById('levelFill');
+  const playback = document.getElementById('playback');
+  const recognizedText = document.getElementById('recognizedText');
+  const diffOutput = document.getElementById('diffOutput');
+  const scoreRing = document.getElementById('scoreRing');
+  const scoreNum = document.getElementById('scoreNum');
+  const pitchCanvas = document.getElementById('pitchCanvas');
+  const pitchLegend = document.getElementById('pitchLegend');
+  const adviceBox = document.getElementById('adviceBox');
+  const pctx = pitchCanvas.getContext('2d');
+
+  // ---------- プリセット例文 ----------
+  const presets = [
+    {label:'こんにちは', text:'မင်္ဂလာပါ'},
+    {label:'ありがとう', text:'ကျေးဇူးတင်ပါတယ်'},
+    {label:'お元気ですか', text:'နေကောင်းလား'},
+    {label:'はい', text:'ဟုတ်ကဲ့'},
+    {label:'すみません', text:'တောင်းပန်ပါတယ်'}
+  ];
+  presets.forEach(p=>{
+    const b = document.createElement('button');
+    b.className='preset-btn';
+    b.textContent = p.label + '（' + p.text + '）';
+    b.addEventListener('click', ()=>{ phraseInput.value = p.text; if(typeof refreshCachedAudioUI==='function') refreshCachedAudioUI(); if(typeof refreshReferenceStatus==='function') refreshReferenceStatus(); });
+    presetRow.appendChild(b);
+  });
+
+  // ---------- Google翻訳の音声（非公式・登録不要・今すぐ動く） ----------
+  const googleTtsBtn = document.getElementById('googleTtsBtn');
+  const googleTtsStatus = document.getElementById('googleTtsStatus');
+  let googleTtsAudio = null;
+
+  googleTtsBtn.addEventListener('click', ()=>{
+    const text = phraseInput.value.trim();
+    if(!text) return;
+    if(googleTtsAudio){ googleTtsAudio.pause(); googleTtsAudio = null; }
+    const url = 'https://translate.google.com/translate_tts?ie=UTF-8&q=' + encodeURIComponent(text) + '&tl=my&client=tw-ob';
+    googleTtsAudio = new Audio(url);
+    googleTtsStatus.textContent = '再生中…';
+    googleTtsStatus.className = 'status-line';
+    googleTtsAudio.play().then(()=>{
+      googleTtsStatus.textContent = '「Google翻訳の音声で再生」は登録不要ですぐ使えます（非公式のため将来使えなくなる可能性があります）。';
+      googleTtsStatus.className = 'status-line ok';
+    }).catch(err=>{
+      googleTtsStatus.textContent = '再生に失敗しました：' + err.message + '（Googleの仕様変更や通信状況による可能性があります）';
+      googleTtsStatus.className = 'status-line warn';
+    });
+  });
+
+  // ---------- 保存済みネイティブ音声（Musely等でダウンロードしたファイルをアップロード） ----------
+  const audioUpload = document.getElementById('audioUpload');
+  const audioLibStatus = document.getElementById('audioLibStatus');
+  const cachedAudioControls = document.getElementById('cachedAudioControls');
+  const playCachedBtn = document.getElementById('playCachedBtn');
+  const deleteCachedBtn = document.getElementById('deleteCachedBtn');
+  let cachedAudioObj = null; // { phrase, base64, mime }
+  let cachedAudioEl = null;
+
+  function hashPhrase(str){
+    let hash = 5381;
+    for(let i=0;i<str.length;i++){
+      hash = ((hash << 5) + hash) + str.charCodeAt(i);
+      hash = hash & hash;
+    }
+    return Math.abs(hash).toString(36);
+  }
+  function audioKeyFor(text){ return 'audio-' + hashPhrase(text); }
+
+  async function refreshCachedAudioUI(){
+    const text = phraseInput.value.trim();
+    cachedAudioObj = null;
+    if(!text){
+      audioLibStatus.textContent = 'このフレーズの保存済み音声：なし';
+      cachedAudioControls.style.display = 'none';
+      return;
+    }
+    try{
+      const result = await localDB.get(audioKeyFor(text));
+      if(result && result.value){
+        const obj = JSON.parse(result.value);
+        if(obj.phrase === text){
+          cachedAudioObj = obj;
+          audioLibStatus.textContent = '保存済みの音声があります。「保存音声を再生」で聞けます。';
+          audioLibStatus.className = 'status-line ok';
+          cachedAudioControls.style.display = 'flex';
+          return;
+        }
+      }
+    }catch(e){ /* 未保存の場合はエラーになるが正常な状態 */ }
+    audioLibStatus.textContent = 'このフレーズの保存済み音声：なし（Muselyで生成→アップロードすると保存されます）';
+    audioLibStatus.className = 'status-line';
+    cachedAudioControls.style.display = 'none';
+  }
+
+  audioUpload.addEventListener('change', async (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const text = phraseInput.value.trim();
+    if(!text){ audioLibStatus.textContent = '先にお手本フレーズを入力してください。'; return; }
+    if(file.size > 4 * 1024 * 1024){
+      audioLibStatus.textContent = 'ファイルが大きすぎます（4MB以下推奨）。短いフレーズの音声をご利用ください。';
+      audioLibStatus.className = 'status-line warn';
+      return;
+    }
+    try{
+      const dataUrl = await new Promise((resolve, reject)=>{
+        const reader = new FileReader();
+        reader.onload = ()=>resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      const commaIdx = dataUrl.indexOf(',');
+      const base64 = dataUrl.slice(commaIdx+1);
+      const mime = file.type || 'audio/mpeg';
+      const obj = { phrase: text, base64, mime };
+      const saveResult = await localDB.set(audioKeyFor(text), JSON.stringify(obj));
+      if(!saveResult){ throw new Error('保存に失敗しました'); }
+      await refreshCachedAudioUI();
+      audioLibStatus.textContent = '保存しました。「保存音声を再生」で確認できます。';
+      audioLibStatus.className = 'status-line ok';
+    }catch(err){
+      audioLibStatus.textContent = 'アップロードに失敗しました：' + err.message;
+      audioLibStatus.className = 'status-line warn';
+    }
+    audioUpload.value = '';
+  });
+
+  playCachedBtn.addEventListener('click', ()=>{
+    if(!cachedAudioObj) return;
+    if(cachedAudioEl){ cachedAudioEl.pause(); cachedAudioEl = null; }
+    cachedAudioEl = new Audio('data:' + cachedAudioObj.mime + ';base64,' + cachedAudioObj.base64);
+    cachedAudioEl.play().catch(err=>{
+      audioLibStatus.textContent = '再生に失敗しました：' + err.message;
+      audioLibStatus.className = 'status-line warn';
+    });
+  });
+
+  deleteCachedBtn.addEventListener('click', async ()=>{
+    const text = phraseInput.value.trim();
+    if(!text) return;
+    try{ await localDB.delete(audioKeyFor(text)); }catch(e){}
+    await refreshCachedAudioUI();
+  });
+
+  // ---------- お手本のリズム（声の高低パターン）を記録して比較する ----------
+  const recordRefBtn = document.getElementById('recordRefBtn');
+  const refStatus = document.getElementById('refStatus');
+  const comparisonStatus = document.getElementById('comparisonStatus');
+  const comparisonRing = document.getElementById('comparisonRing');
+  const comparisonScoreNum = document.getElementById('comparisonScoreNum');
+
+  function refKeyFor(text){ return 'refpitch-' + hashPhrase(text); }
+
+  async function refreshReferenceStatus(){
+    const text = phraseInput.value.trim();
+    if(!text){
+      refStatus.textContent = 'このフレーズのお手本リズムはまだ記録されていません。';
+      refStatus.className = 'status-line';
+      return;
+    }
+    try{
+      const result = await localDB.get(refKeyFor(text));
+      if(result && result.value){
+        const obj = JSON.parse(result.value);
+        if(obj.phrase === text){
+          refStatus.textContent = 'このフレーズのお手本リズムは記録済みです。「録音開始」で発音すると自動で比較されます。';
+          refStatus.className = 'status-line ok';
+          return;
+        }
+      }
+    }catch(e){ /* 未記録の場合はエラーになるが正常な状態 */ }
+    refStatus.textContent = 'このフレーズのお手本リズムはまだ記録されていません（下のボタンで記録できます）。';
+    refStatus.className = 'status-line';
+  }
+
+  async function recordReference(){
+    const text = phraseInput.value.trim();
+    if(!text){ refStatus.textContent = '先にお手本フレーズを入力してください。'; return; }
+
+    refStatus.textContent = 'マイクの準備をしています…';
+    refStatus.className = 'status-line';
+    let stream;
+    try{
+      stream = await ensureMicStream();
+    }catch(err){
+      refStatus.textContent = 'マイクへのアクセスが許可されませんでした：' + err.message;
+      refStatus.className = 'status-line warn';
+      return;
+    }
+
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const src = ctx.createMediaStreamSource(stream);
+    const refAnalyser = ctx.createAnalyser();
+    refAnalyser.fftSize = 2048;
+    src.connect(refAnalyser);
+
+    const contour = [];
+    let capturing = true;
+    let maxRmsSeen = 0;
+    function loop(){
+      if(!capturing) return;
+      const buf = new Float32Array(refAnalyser.fftSize);
+      refAnalyser.getFloatTimeDomainData(buf);
+      let rms = 0;
+      for(let i=0;i<buf.length;i++) rms += buf[i]*buf[i];
+      rms = Math.sqrt(rms/buf.length);
+      if(rms > maxRmsSeen) maxRmsSeen = rms;
+      const freq = autoCorrelate(buf, ctx.sampleRate, 0.0009);
+      contour.push(freq > 60 && freq < 500 ? freq : 0);
+      requestAnimationFrame(loop);
+    }
+
+    const url = 'https://translate.google.com/translate_tts?ie=UTF-8&q=' + encodeURIComponent(text) + '&tl=my&client=tw-ob';
+    const audioEl = new Audio(url);
+    refStatus.textContent = '再生中…スピーカーの音をマイクで記録しています（周囲を静かにしてお待ちください）。';
+    refStatus.className = 'status-line';
+
+    try{
+      await new Promise((resolve, reject)=>{
+        audioEl.addEventListener('ended', resolve, {once:true});
+        audioEl.addEventListener('error', ()=>reject(new Error('音声の再生に失敗しました')), {once:true});
+        loop();
+        audioEl.play().catch(reject);
+      });
+    }catch(err){
+      capturing = false;
+      src.disconnect();
+      ctx.close();
+      refStatus.textContent = '記録に失敗しました：' + err.message;
+      refStatus.className = 'status-line warn';
+      return;
+    }
+
+    capturing = false;
+    src.disconnect();
+    ctx.close();
+    // マイク自体は手放さない（次回以降に許可を再度求められるのを防ぐため）
+
+    const voicedCount = contour.filter(v=>v>0).length;
+    if(voicedCount < 5){
+      refStatus.textContent = '記録に失敗しました（マイクが拾った最大音量レベル：' + maxRmsSeen.toFixed(4) + '）。スピーカーの音量を上げるか、マイクをスピーカーに近づけて再度お試しください。';
+      refStatus.className = 'status-line warn';
+      return;
+    }
+
+    try{
+      const saveResult = await localDB.set(refKeyFor(text), JSON.stringify({phrase: text, contour}));
+      if(!saveResult) throw new Error('保存に失敗しました');
+      refStatus.textContent = 'お手本のリズムを記録しました。この後「録音開始」で発音すると、自動で比較されます。';
+      refStatus.className = 'status-line ok';
+    }catch(err){
+      refStatus.textContent = '保存に失敗しました：' + err.message;
+      refStatus.className = 'status-line warn';
+    }
+  }
+
+  recordRefBtn.addEventListener('click', recordReference);
+
+  // ---------- 比較用の数値処理 ----------
+  function resampleToLength(arr, targetLen){
+    const n = arr.length;
+    if(n === 0) return new Array(targetLen).fill(0);
+    if(n === 1) return new Array(targetLen).fill(arr[0]);
+    const out = new Array(targetLen);
+    for(let i=0;i<targetLen;i++){
+      const pos = (i/(targetLen-1)) * (n-1);
+      const lo = Math.floor(pos), hi = Math.min(n-1, Math.ceil(pos));
+      const frac = pos - lo;
+      out[i] = arr[lo] * (1-frac) + arr[hi] * frac;
+    }
+    return out;
+  }
+
+  function zscore(arr){
+    const mean = arr.reduce((s,v)=>s+v,0) / arr.length;
+    const variance = arr.reduce((s,v)=>s+(v-mean)*(v-mean),0) / arr.length;
+    const std = Math.sqrt(variance) || 1;
+    return arr.map(v => (v-mean)/std);
+  }
+
+  function compareContours(userRaw, refRaw){
+    const userVoiced = userRaw.filter(v=>v>0);
+    const refVoiced = refRaw.filter(v=>v>0);
+    if(userVoiced.length < 5 || refVoiced.length < 5) return null;
+
+    const N = 30;
+    const userR = zscore(resampleToLength(userVoiced, N));
+    const refR = zscore(resampleToLength(refVoiced, N));
+
+    let sumSq = 0;
+    const segCount = 3, segLen = N/segCount;
+    const segErr = [0,0,0];
+    for(let i=0;i<N;i++){
+      const d = userR[i]-refR[i];
+      sumSq += d*d;
+      const seg = Math.min(segCount-1, Math.floor(i/segLen));
+      segErr[seg] += d*d;
+    }
+    const rmse = Math.sqrt(sumSq/N);
+    const score = Math.max(0, Math.min(100, Math.round(100 * (1 - rmse/2.2))));
+
+    const segLabels = ['前半','中盤','後半'];
+    let worstSeg = 0;
+    for(let s=1;s<segCount;s++){ if(segErr[s] > segErr[worstSeg]) worstSeg = s; }
+
+    return { score, worstSegLabel: segLabels[worstSeg], userR, refR };
+  }
+
+  function updateComparisonScore(score){
+    comparisonRing.style.setProperty('--pct', score);
+    comparisonScoreNum.textContent = score + '%';
+  }
+
+  function drawComparisonChart(userR, refR){
+    const w = pitchCanvas.width, h = pitchCanvas.height;
+    pctx.clearRect(0,0,w,h);
+    pctx.strokeStyle = 'rgba(27,42,74,0.15)';
+    pctx.beginPath();
+    pctx.moveTo(0,h/2); pctx.lineTo(w,h/2); pctx.stroke();
+
+    const zMin=-2.5, zMax=2.5, range=zMax-zMin;
+    function drawLine(arr, color, lineW){
+      pctx.strokeStyle = color;
+      pctx.lineWidth = lineW;
+      pctx.beginPath();
+      arr.forEach((z,i)=>{
+        const x = (i/(arr.length-1))*w;
+        const clamped = Math.max(zMin, Math.min(zMax, z));
+        const y = h - ((clamped-zMin)/range)*(h-10) - 5;
+        if(i===0) pctx.moveTo(x,y); else pctx.lineTo(x,y);
+      });
+      pctx.stroke();
+    }
+    drawLine(refR, '#c9a227', 3);
+    drawLine(userR, '#7a2e2e', 2);
+  }
+
+  async function runComparisonIfAvailable(){
+    const text = phraseInput.value.trim();
+    if(!text) return;
+    let refData = null;
+    try{
+      const result = await localDB.get(refKeyFor(text));
+      if(result && result.value){
+        const obj = JSON.parse(result.value);
+        if(obj.phrase === text) refData = obj.contour;
+      }
+    }catch(e){ /* 未記録 */ }
+
+    if(!refData){
+      comparisonStatus.textContent = 'お手本のリズムがまだ記録されていません。上の「お手本のリズムを記録する」を押すと、次回から自動で比較できます。';
+      comparisonStatus.className = 'status-line';
+      updateComparisonScore(0);
+      return;
+    }
+
+    const cmp = compareContours(pitchSeries, refData);
+    if(!cmp){
+      comparisonStatus.textContent = '声を十分に拾えなかったため比較できませんでした。もう少しはっきり発音してもう一度録音してみてください。';
+      comparisonStatus.className = 'status-line warn';
+      updateComparisonScore(0);
+      return;
+    }
+
+    updateComparisonScore(cmp.score);
+    drawComparisonChart(cmp.userR, cmp.refR);
+    let cls = 'status-line';
+    if(cmp.score >= 70) cls = 'status-line ok';
+    else if(cmp.score < 40) cls = 'status-line warn';
+    comparisonStatus.innerHTML = 'お手本と比べて、「<strong>' + cmp.worstSegLabel + '</strong>」部分の声の高低パターンが最も異なっていました。そこを意識してもう一度発音してみましょう。（グラフ：<span style="color:#c9a227;font-weight:700;">■お手本</span> / <span style="color:#7a2e2e;font-weight:700;">■あなた</span>）';
+    comparisonStatus.className = cls;
+  }
+
+  // フレーズ変更時に保存済み音声の有無を再確認
+  phraseInput.addEventListener('change', ()=>{ refreshCachedAudioUI(); refreshReferenceStatus(); });
+  phraseInput.addEventListener('blur', ()=>{ refreshCachedAudioUI(); refreshReferenceStatus(); });
+  refreshCachedAudioUI();
+  refreshReferenceStatus();
+
+  // ---------- 音声認識 ----------
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let recognition = null;
+  let recognitionSupported = !!SR;
+  let lastRecognizedText = '';
+  let recognitionResultHandled = false;
+
+  if(recognitionSupported){
+    recognition = new SR();
+    recognition.lang = 'my-MM';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognition.continuous = false;
+
+    recognition.onresult = (e)=>{
+      recognitionResultHandled = true;
+      const text = e.results[0][0].transcript.trim();
+      lastRecognizedText = text;
+      recognizedText.textContent = text || '（認識結果が空でした）';
+      renderDiffAndScore(text);
+    };
+    recognition.onerror = (e)=>{
+      recognitionResultHandled = true;
+      recognizedText.textContent = '認識エラー：' + e.error + '（ミャンマー語がこの環境の音声認識サービスに対応していない可能性があります）';
+      diffOutput.textContent = '';
+      updateScore(null);
+      showAdvice('bad', '音声認識でエラーが発生しました。マイクの許可、通信環境、発音の明瞭さを確認して再度お試しください。');
+    };
+    recognition.onnomatch = ()=>{
+      recognitionResultHandled = true;
+      recognizedText.textContent = '（認識できませんでした）';
+      updateScore(0);
+      showAdvice('bad', '音声を認識できませんでした。マイクに近づき、はっきりと発音してみてください。');
+    };
+    recognition.onend = ()=>{
+      if(!recognitionResultHandled){
+        recognizedText.textContent = '（この環境ではミャンマー語の音声認識から結果が返ってきませんでした）';
+        diffOutput.textContent = '';
+        updateScore(null);
+        showAdvice('bad', 'このブラウザ・端末の音声認識は、ミャンマー語の結果を返せなかったようです。認識機能に対応していない可能性があります。録音した自分の声とGoogle翻訳の音声を聞き比べて、耳で確認する方法に切り替えてください。');
+      }
+    };
+  }
+
+  // ---------- 文字一致率（参考値）と差分表示 ----------
+  // シンプルな編集距離ベースの一致率（ミャンマー文字は結合文字が多いため、コードポイント単位で比較）
+  function levenshtein(a, b){
+    const al = Array.from(a), bl = Array.from(b);
+    const m = al.length, n = bl.length;
+    const dp = Array.from({length:m+1}, ()=>new Array(n+1).fill(0));
+    for(let i=0;i<=m;i++) dp[i][0]=i;
+    for(let j=0;j<=n;j++) dp[0][j]=j;
+    for(let i=1;i<=m;i++){
+      for(let j=1;j<=n;j++){
+        if(al[i-1]===bl[j-1]) dp[i][j]=dp[i-1][j-1];
+        else dp[i][j] = 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
+      }
+    }
+    return dp[m][n];
+  }
+
+  // 簡易LCSベースの差分（お手本 vs 認識結果）
+  function diffChars(target, recognized){
+    const a = Array.from(target), b = Array.from(recognized);
+    const m=a.length, n=b.length;
+    const dp = Array.from({length:m+1},()=>new Array(n+1).fill(0));
+    for(let i=m-1;i>=0;i--){
+      for(let j=n-1;j>=0;j--){
+        dp[i][j] = a[i]===b[j] ? dp[i+1][j+1]+1 : Math.max(dp[i+1][j], dp[i][j+1]);
+      }
+    }
+    let i=0,j=0; let html='お手本： ';
+    while(i<m && j<n){
+      if(a[i]===b[j]){ html+=a[i]; i++; j++; }
+      else if(dp[i+1][j] >= dp[i][j+1]){ html+='<del>'+a[i]+'</del>'; i++; }
+      else { j++; }
+    }
+    while(i<m){ html+='<del>'+a[i]+'</del>'; i++; }
+    return html;
+  }
+
+  function renderDiffAndScore(recognizedRaw){
+    const target = phraseInput.value.trim();
+    const recognized = recognizedRaw.trim();
+    if(!target){ return; }
+    const dist = levenshtein(target, recognized);
+    const maxLen = Math.max(Array.from(target).length, Array.from(recognized).length, 1);
+    const pct = Math.max(0, Math.round((1 - dist/maxLen) * 100));
+    updateScore(pct);
+    diffOutput.innerHTML = '<span class="diff">' + diffChars(target, recognized) + '</span>　（打ち消し線＝お手本にあり認識結果になかった文字）';
+    decideAdvice(pct, recognized);
+  }
+
+  function updateScore(pct){
+    if(pct===null || pct===undefined){
+      scoreRing.style.setProperty('--pct', 0);
+      scoreNum.textContent = '–';
+      return;
+    }
+    scoreRing.style.setProperty('--pct', pct);
+    scoreNum.textContent = pct + '%';
+  }
+
+  function showAdvice(level, text){
+    adviceBox.className = 'advice ' + level;
+    adviceBox.textContent = text;
+  }
+
+  function decideAdvice(pct, recognized){
+    if(!recognized){
+      showAdvice('bad', '音声が認識されませんでした。マイクに近づいて、はっきり発音してから、もう一度お試しください。');
+      return;
+    }
+    if(pct >= 85){
+      showAdvice('good', 'とても近い発音として認識されました。良い調子です。');
+    }else if(pct >= 55){
+      showAdvice('mid', 'おおむね認識されていますが、一部の文字（打ち消し線の部分）が認識結果と異なります。お手本音声をもう一度聞いて、その音を意識して発音してみましょう。※これは音声認識テキストとの文字比較であり、声調そのものの正誤判定ではありません。');
+    }else{
+      showAdvice('bad', '認識結果とお手本の文字が大きく異なりました。お手本をゆっくり再生して聞き直し、区切って発音してみてください。ミャンマー語は声調（トーン）で意味が変わるため、下のピッチグラフで自分の声の高低の変化も確認してみましょう。');
+    }
+  }
+
+  // ---------- 録音 & ピッチ解析 ----------
+  let mediaStream, audioCtx, analyser, sourceNode, dataArray, mediaRecorder, chunks=[];
+  let recording = false;
+  let pitchSeries = [];
+  let recStartTime = 0;
+
+  // マイクは一度許可されたら、ページを開いている間ずっと使い回す（毎回stopすると許可を再度求められるため）
+  // getUserMediaの呼び出し自体をPromiseごとキャッシュし、成功後は二度と呼び出さない
+  let micStreamPromise = null;
+  function ensureMicStream(){
+    if(!micStreamPromise){
+      micStreamPromise = navigator.mediaDevices.getUserMedia({audio:true}).catch(err=>{
+        micStreamPromise = null; // 失敗した場合は次回また取得を試みられるようにする
+        throw err;
+      });
+    }
+    return micStreamPromise;
+  }
+  let animationFrameId = null;
+  let recTimerInterval = null;
+
+  function drawPitch(){
+    const w = pitchCanvas.width, h = pitchCanvas.height;
+    pctx.clearRect(0,0,w,h);
+    pctx.strokeStyle = 'rgba(27,42,74,0.15)';
+    pctx.beginPath();
+    pctx.moveTo(0, h/2); pctx.lineTo(w, h/2); pctx.stroke();
+
+    if(pitchSeries.length < 2) return;
+    const valid = pitchSeries.filter(v=>v>0);
+    if(valid.length < 2) return;
+    const minF = Math.min(...valid) * 0.9;
+    const maxF = Math.max(...valid) * 1.1;
+    const range = Math.max(maxF - minF, 1);
+
+    pctx.strokeStyle = '#7a2e2e';
+    pctx.lineWidth = 2;
+    pctx.beginPath();
+    let started = false;
+    pitchSeries.forEach((f, idx)=>{
+      const x = (idx/(pitchSeries.length-1)) * w;
+      if(f<=0){ started=false; return; }
+      const y = h - ((f - minF)/range) * (h-10) - 5;
+      if(!started){ pctx.moveTo(x,y); started=true; }
+      else pctx.lineTo(x,y);
+    });
+    pctx.stroke();
+  }
+
+  // 自己相関法による基本周波数推定
+  function autoCorrelate(buf, sampleRate, rmsThreshold){
+    const SIZE = buf.length;
+    let rms = 0;
+    for(let i=0;i<SIZE;i++) rms += buf[i]*buf[i];
+    rms = Math.sqrt(rms/SIZE);
+    if(rms < (rmsThreshold !== undefined ? rmsThreshold : 0.01)) return -1; // 無音
+
+    let r1=0, r2=SIZE-1, thres=0.2;
+    for(let i=0;i<SIZE/2;i++){ if(Math.abs(buf[i])<thres){ r1=i; break; } }
+    for(let i=1;i<SIZE/2;i++){ if(Math.abs(buf[SIZE-i])<thres){ r2=SIZE-i; break; } }
+    const trimmed = buf.slice(r1, r2);
+    const n = trimmed.length;
+    const c = new Array(n).fill(0);
+    for(let lag=0; lag<n; lag++){
+      let sum=0;
+      for(let i=0;i<n-lag;i++) sum += trimmed[i]*trimmed[i+lag];
+      c[lag]=sum;
+    }
+    let d=0; while(c[d]>c[d+1]) d++;
+    let maxval=-1, maxpos=-1;
+    for(let i=d;i<n;i++){
+      if(c[i]>maxval){ maxval=c[i]; maxpos=i; }
+    }
+    let T0 = maxpos;
+    if(T0<=0) return -1;
+    return sampleRate / T0;
+  }
+
+  function pitchLoop(){
+    if(!recording) return;
+    const buf = new Float32Array(analyser.fftSize);
+    analyser.getFloatTimeDomainData(buf);
+
+    // レベルメーター
+    let sum=0; for(let i=0;i<buf.length;i++) sum += buf[i]*buf[i];
+    const level = Math.min(1, Math.sqrt(sum/buf.length) * 6);
+    levelFill.style.width = (level*100).toFixed(0) + '%';
+
+    const freq = autoCorrelate(buf, audioCtx.sampleRate);
+    // ヒトの声の基本周波数の妥当範囲でフィルタ
+    if(freq > 60 && freq < 500){
+      pitchSeries.push(freq);
+    }else{
+      pitchSeries.push(0);
+    }
+    if(pitchSeries.length > 300) pitchSeries.shift();
+    drawPitch();
+    animationFrameId = requestAnimationFrame(pitchLoop);
+  }
+
+  async function startRecording(){
+    try{
+      mediaStream = await ensureMicStream();
+    }catch(err){
+      micStatus.textContent = 'マイクへのアクセスが許可されませんでした：' + err.message;
+      micStatus.className = 'status-line warn';
+      return;
+    }
+    micStatus.textContent = '録音中…はっきりと発音してください。';
+    micStatus.className = 'status-line ok';
+
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    sourceNode = audioCtx.createMediaStreamSource(mediaStream);
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 2048;
+    sourceNode.connect(analyser);
+
+    pitchSeries = [];
+    pitchLegend.textContent = '録音中の声の高さ（基本周波数）の推移：';
+
+    chunks = [];
+    try{
+      mediaRecorder = new MediaRecorder(mediaStream);
+      mediaRecorder.ondataavailable = (e)=>{ if(e.data.size>0) chunks.push(e.data); };
+      mediaRecorder.onstop = ()=>{
+        const blob = new Blob(chunks, {type: mediaRecorder.mimeType || 'audio/webm'});
+        const url = URL.createObjectURL(blob);
+        playback.src = url;
+        playback.style.display = 'block';
+      };
+      mediaRecorder.start();
+    }catch(err){
+      // MediaRecorder非対応環境でも認識・ピッチ解析は継続
+      console.warn('MediaRecorder not available:', err);
+    }
+
+    recording = true;
+    recBtn.textContent = '⏹ 録音停止';
+    recBtn.classList.add('recording');
+    recognizedText.textContent = '（認識中…）';
+    diffOutput.textContent = '';
+    updateScore(null);
+    showAdvice('mid', '発音を認識しています…');
+    recognitionResultHandled = false;
+
+    recStartTime = Date.now();
+    recTimerInterval = setInterval(()=>{
+      const sec = Math.floor((Date.now()-recStartTime)/1000);
+      const mm = String(Math.floor(sec/60)).padStart(2,'0');
+      const ss = String(sec%60).padStart(2,'0');
+      recTimer.textContent = mm+':'+ss;
+    }, 200);
+
+    pitchLoop();
+
+    if(recognitionSupported){
+      try{ recognition.start(); }catch(e){ /* 既に開始されている場合は無視 */ }
+    }else{
+      recognizedText.textContent = 'このブラウザは音声認識(SpeechRecognition)に対応していません。Google Chromeでの利用を推奨します。';
+      showAdvice('bad', '音声認識が利用できないため、テキスト一致率は算出できません。録音の再生とピッチグラフのみ参考にしてください。');
+    }
+  }
+
+  function stopRecording(){
+    recording = false;
+    recBtn.textContent = '🎙 録音開始';
+    recBtn.classList.remove('recording');
+    levelFill.style.width = '0%';
+    clearInterval(recTimerInterval);
+    if(animationFrameId) cancelAnimationFrame(animationFrameId);
+
+    if(mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+    if(recognitionSupported){ try{ recognition.stop(); }catch(e){} }
+    if(sourceNode) sourceNode.disconnect();
+    if(audioCtx) audioCtx.close();
+    // マイク自体は手放さない（次回以降に許可を再度求められるのを防ぐため、ページを開いている間は保持する）
+
+    micStatus.textContent = '録音が完了しました。結果は下に表示されます。';
+    micStatus.className = 'status-line ok';
+
+    // runComparisonIfAvailable(); // 実験的機能のため今回は無効化
+  }
+
+  recBtn.addEventListener('click', ()=>{
+    if(!recording) startRecording();
+    else stopRecording();
+  });
+
+  // ページを開いた直後に一度だけマイクの許可を求めておく（以降は録音のたびに聞かれないようにするため）
+  micStatus.textContent = 'マイクの許可を確認しています…（初回のみ許可を求めます）';
+  ensureMicStream().then(()=>{
+    micStatus.textContent = 'マイクの準備ができました。「録音開始」を押してください。';
+    micStatus.className = 'status-line ok';
+  }).catch(err=>{
+    micStatus.textContent = 'マイクへのアクセスが許可されませんでした：' + err.message + '（「録音開始」を押すと再度お尋ねします）';
+    micStatus.className = 'status-line warn';
+  });
+
+})();
+</script>
+</body>
+</html>
