@@ -119,15 +119,7 @@
   .level-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--gold),var(--lac));transition:width .06s linear;}
 
   .result-block{margin-top:6px;}
-  .recognized{
-    font-family:'Noto Sans Myanmar',sans-serif;
-    font-size:20px;padding:12px 14px;
-    background:var(--paper-dim);border-radius:10px;
-    min-height:1.6em;
-  }
   .diff-note{font-size:12px;color:var(--ink-soft);margin-top:6px;}
-  .diff del{background:rgba(168,60,60,0.18);text-decoration:none;border-bottom:2px solid var(--bad);}
-  .diff ins{background:rgba(63,122,79,0.18);text-decoration:none;border-bottom:2px solid var(--ok);}
 
   .score-row{display:flex;align-items:center;gap:14px;margin-top:14px;}
   .score-ring{
@@ -241,7 +233,6 @@
       <strong>このアプリの限界について：</strong>
       「Google翻訳の音声で再生」は非公式の方法のため、将来Google側の仕様変更で使えなくなる可能性があります。
       「声の高低パターンの近さ」は、Googleの音声をスピーカーで再生しマイクで録音して比較する仕組みのため、周囲の騒音やスピーカー音量の影響を受けやすく、あくまで参考値です。声調（トーン）そのものの絶対的な正誤を機械的に判定する技術ではありません。
-      以前あった、録音した声をブラウザ内蔵の音声認識でテキスト化する自動採点機能は、ミャンマー語への対応が不安定だったため廃止しました。
       発音の正確さの最終確認は、可能な限りミャンマー語ネイティブスピーカーへの確認も併用してください。
     </div>
   </section>
@@ -677,7 +668,13 @@
   let micStreamPromise = null;
   function ensureMicStream(){
     if(!micStreamPromise){
-      micStreamPromise = navigator.mediaDevices.getUserMedia({audio:true}).catch(err=>{
+      micStreamPromise = navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false
+        }
+      }).catch(err=>{
         micStreamPromise = null;
         throw err;
       });
