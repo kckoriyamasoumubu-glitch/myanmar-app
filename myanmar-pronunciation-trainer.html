@@ -334,7 +334,6 @@
     const url = 'https://translate.google.com/translate_tts?ie=UTF-8&q=' + encodeURIComponent(text) + '&tl=my&client=tw-ob';
     googleTtsAudio = new Audio(url);
     googleTtsAudio.referrerPolicy = 'no-referrer';
-    googleTtsAudio.crossOrigin = 'anonymous';
     googleTtsStatus.textContent = '再生中…';
     googleTtsStatus.className = 'status-line';
     googleTtsAudio.play().then(()=>{
