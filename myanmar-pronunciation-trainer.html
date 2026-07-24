@@ -274,6 +274,14 @@
         <option value="my-MM-NilarNeural">Nilar（女性）</option>
         <option value="my-MM-ThihaNeural">Thiha（男性）</option>
       </select>
+      <label>再生速度</label>
+      <select id="azureRateSelect">
+        <option value="0.5">0.5倍（かなりゆっくり）</option>
+        <option value="0.65">0.65倍（ゆっくり）</option>
+        <option value="0.8">0.8倍（少しゆっくり）</option>
+        <option value="1.0" selected>1.0倍（標準）</option>
+        <option value="1.15">1.15倍（少し速い）</option>
+      </select>
       <div class="row" style="margin-top:0;">
         <button class="action btn-gold" id="azureSaveBtn">保存</button>
         <button class="action btn-outline" id="azureClearBtn">キーを消去</button>
@@ -679,6 +687,7 @@
   const azureKeyInput = document.getElementById('azureKeyInput');
   const azureRegionInput = document.getElementById('azureRegionInput');
   const azureVoiceSelect = document.getElementById('azureVoiceSelect');
+  const azureRateSelect = document.getElementById('azureRateSelect');
   const azureSaveBtn = document.getElementById('azureSaveBtn');
   const azureClearBtn = document.getElementById('azureClearBtn');
   const azureSettingsStatus = document.getElementById('azureSettingsStatus');
@@ -704,6 +713,7 @@
       azureKeyInput.value = saved.key || '';
       azureRegionInput.value = saved.region || '';
       azureVoiceSelect.value = saved.voice || 'my-MM-NilarNeural';
+      azureRateSelect.value = saved.rate || '1.0';
       azureTtsStatus.textContent = 'Azure設定が保存されています。「Azure音声で再生」をお使いいただけます。';
       azureTtsStatus.className = 'status-line ok';
     }
@@ -717,12 +727,13 @@
     const key = azureKeyInput.value.trim();
     const region = azureRegionInput.value.trim();
     const voice = azureVoiceSelect.value;
+    const rate = azureRateSelect.value;
     if(!key || !region){
       azureSettingsStatus.textContent = 'キーとリージョンの両方を入力してください。';
       azureSettingsStatus.className = 'status-line warn';
       return;
     }
-    saveAzureSettings({key, region, voice});
+    saveAzureSettings({key, region, voice, rate});
     azureSettingsStatus.textContent = '保存しました（この端末のブラウザ内のみ）。';
     azureSettingsStatus.className = 'status-line ok';
     azureTtsStatus.textContent = 'Azure設定が保存されています。「Azure音声で再生」をお使いいただけます。';
@@ -748,7 +759,10 @@
     if(!settings || !settings.key || !settings.region){
       throw new Error('Azure設定（キー・リージョン）が未入力です');
     }
-    const ssml = '<speak version="1.0" xml:lang="my-MM"><voice name="' + settings.voice + '">' + escapeSsml(text) + '</voice></speak>';
+    const rateMultiplier = parseFloat(settings.rate) || 1.0;
+    const ratePercent = Math.round((rateMultiplier - 1) * 100);
+    const rateAttr = (ratePercent >= 0 ? '+' : '') + ratePercent + '%';
+    const ssml = '<speak version="1.0" xml:lang="my-MM"><voice name="' + settings.voice + '"><prosody rate="' + rateAttr + '">' + escapeSsml(text) + '</prosody></voice></speak>';
     const endpoint = 'https://' + settings.region + '.tts.speech.microsoft.com/cognitiveservices/v1';
     const res = await fetch(endpoint, {
       method: 'POST',
@@ -778,7 +792,7 @@
       const url = await synthesizeWithAzure(text);
       azureTtsAudio = new Audio(url);
       await azureTtsAudio.play();
-      azureTtsStatus.textContent = '再生しました（Azure Neural TTS：' + azureVoiceSelect.value + '）。';
+      azureTtsStatus.textContent = '再生しました（Azure Neural TTS：' + azureVoiceSelect.value + '／' + azureRateSelect.value + '倍速）。';
       azureTtsStatus.className = 'status-line ok';
     }catch(err){
       azureTtsStatus.textContent = '再生に失敗しました：' + err.message;
