@@ -174,6 +174,47 @@
     font-size:12px;color:var(--warn);background:#fff8ea;border:1px solid var(--gold-soft);
     border-radius:8px;padding:10px 12px;margin-top:10px;
   }
+
+  .meaning-row{margin-top:10px;}
+  .meaning-row label{display:block;font-size:12px;color:var(--ink-soft);margin-bottom:4px;}
+  #meaningInput{
+    width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:8px;
+    background:#fff;color:var(--ink);font-size:14px;box-sizing:border-box;
+  }
+  .meaning-hint{font-size:12px;color:var(--ink-soft);margin-top:4px;}
+  .meaning-hint.warn{color:var(--warn);}
+  .meaning-hint.ok{color:var(--ok);}
+
+  .library-panel{
+    margin-top:12px;padding:14px;border:1px solid var(--line);border-radius:10px;
+    background:var(--paper-dim);display:none;
+  }
+  .library-panel.open{display:block;}
+  #librarySearch{
+    width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;
+    background:#fff;color:var(--ink);font-size:13px;box-sizing:border-box;margin-bottom:10px;
+  }
+  .library-list{max-height:280px;overflow-y:auto;}
+  .library-item{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:8px 10px;background:#fff;border:1px solid var(--line);border-radius:8px;margin-bottom:6px;
+  }
+  .library-item .lib-text{flex:1;min-width:0;}
+  .library-item .lib-ja{font-size:13px;color:var(--ink);font-weight:500;}
+  .library-item .lib-my{font-family:'Noto Sans Myanmar',sans-serif;font-size:16px;color:var(--ink-soft);}
+  .library-item .lib-actions{display:flex;gap:6px;flex-shrink:0;}
+  .lib-btn{
+    font-size:12px;padding:6px 10px;border-radius:6px;border:1px solid var(--line);
+    background:#fff;color:var(--ink);cursor:pointer;
+  }
+  .lib-btn.use{background:var(--gold);border-color:var(--gold);color:var(--ink);}
+  .lib-btn.del{color:var(--bad);}
+  .library-empty{font-size:12.5px;color:var(--ink-soft);text-align:center;padding:12px 0;}
+  .library-cat-header{
+    font-size:12px;font-weight:700;color:var(--ink-soft);
+    margin:12px 0 6px;padding-bottom:3px;border-bottom:1px solid var(--line);
+  }
+  .library-cat-header:first-child{margin-top:0;}
 </style>
 </head>
 <body>
@@ -190,6 +231,21 @@
     <h2><span class="num">1</span>お手本フレーズ</h2>
     <textarea id="phraseInput" placeholder="ミャンマー語の例文を入力してください">မင်္ဂလာပါ</textarea>
     <div class="presets" id="presetRow"></div>
+
+    <div class="meaning-row">
+      <label>日本語の意味（メモ・任意）</label>
+      <input type="text" id="meaningInput" placeholder="例：ありがとうございます">
+      <div class="status-line" id="meaningHint"></div>
+    </div>
+    <div class="row" style="margin-top:8px;">
+      <button class="action btn-gold" id="saveToLibraryBtn">📖 この組み合わせを単語帳に保存</button>
+      <button class="action btn-outline" id="libraryToggleBtn" type="button">📚 単語帳を開く</button>
+    </div>
+
+    <div class="library-panel" id="libraryPanel">
+      <input type="text" id="librarySearch" placeholder="日本語・ミャンマー語で検索">
+      <div class="library-list" id="libraryList"></div>
+    </div>
 
     <div class="row">
       <button class="action btn-lac" id="googleTtsBtn">🔊 Google翻訳の音声で再生</button>
@@ -345,9 +401,253 @@
     const b = document.createElement('button');
     b.className='preset-btn';
     b.textContent = p.label + '（' + p.text + '）';
-    b.addEventListener('click', ()=>{ phraseInput.value = p.text; if(typeof refreshCachedAudioUI==='function') refreshCachedAudioUI(); if(typeof refreshReferenceStatus==='function') refreshReferenceStatus(); });
+    b.addEventListener('click', ()=>{
+      phraseInput.value = p.text;
+      meaningInput.value = p.label;
+      if(typeof refreshCachedAudioUI==='function') refreshCachedAudioUI();
+      if(typeof refreshReferenceStatus==='function') refreshReferenceStatus();
+      if(typeof refreshMeaningAutofill==='function') refreshMeaningAutofill();
+    });
     presetRow.appendChild(b);
   });
+
+  // --- 単語帳（ミャンマー語と日本語の意味のペアを保存） ---
+  const meaningInput = document.getElementById('meaningInput');
+  const meaningHint = document.getElementById('meaningHint');
+  const saveToLibraryBtn = document.getElementById('saveToLibraryBtn');
+  const libraryToggleBtn = document.getElementById('libraryToggleBtn');
+  const libraryPanel = document.getElementById('libraryPanel');
+  const librarySearch = document.getElementById('librarySearch');
+  const libraryList = document.getElementById('libraryList');
+
+  function loadLibrary(){
+    try{
+      const raw = localStorage.getItem('mpt:phraseLibrary');
+      if(!raw) return null;
+      const arr = JSON.parse(raw);
+      return Array.isArray(arr) ? arr : null;
+    }catch(e){ return null; }
+  }
+  function saveLibrary(arr){
+    try{ localStorage.setItem('mpt:phraseLibrary', JSON.stringify(arr)); }catch(e){}
+  }
+
+  // 事前ガイダンス説明資料・支援計画書必須単語リストから抽出した組み込みフレーズ
+  const builtinPhrases = [
+    {ja:"氏名", my:"အမည်အပြည့်အစုံ", cat:"支援計画書 基本語"},
+    {ja:"性別", my:"ကျား / မ", cat:"支援計画書 基本語"},
+    {ja:"生年月日", my:"မွေးနေ့သက္ကရာဇ်", cat:"支援計画書 基本語"},
+    {ja:"国籍・地域", my:"နိုင်ငံသား", cat:"支援計画書 基本語"},
+    {ja:"特定技能所属機関", my:"အထူးကျွမ်းကျင်လုပ်သားဆောင်ရွက်မည့်အဖွဲ့အစည်း", cat:"支援計画書 基本語"},
+    {ja:"氏名又は名称", my:"အမည်အပြည့်အစုံ သို့မဟုတ် အခေါ်အဝေါ်", cat:"支援計画書 基本語"},
+    {ja:"住所", my:"နေရပ်လိပ်စာ", cat:"支援計画書 基本語"},
+    {ja:"電話", my:"ဖုန်း", cat:"支援計画書 基本語"},
+    {ja:"代表者の氏名", my:"ကိုယ်စားလှယ် အမည်အပြည့်အစုံ", cat:"支援計画書 基本語"},
+    {ja:"登録支援機関", my:"မှတ်ပုံတင်ခြင်းအကူအညီပေးရေးအဖွဲ့အစည်း", cat:"支援計画書 基本語"},
+    {ja:"登録番号", my:"မှတ်ပုံတင်နံပါတ်", cat:"支援計画書 基本語"},
+    {ja:"登録年月日", my:"မှတ်ပုံတင်နေ့စွဲ", cat:"支援計画書 基本語"},
+    {ja:"支援責任者", my:"အကူအညီပေးရေးတာဝန်ခံ", cat:"支援計画書 基本語"},
+    {ja:"支援業務を行う事務所の所在地", my:"အကူအညီပေးရေးလုပ်ကိုင်မည့် ရုံးခန်း၏တည်နေရာ", cat:"支援計画書 基本語"},
+    {ja:"・会社名：（　　　　　　　　　　　）", my:"ကုမ္ပဏီအမည်：（　　　　　　　　　　　）", cat:"事前ガイダンス説明資料"},
+    {ja:"・仕事の内容：（　　　　　　　　　　　）", my:"လုပ်ရမယ့်အလုပ်：（　　　　　　　　　　　）", cat:"事前ガイダンス説明資料"},
+    {ja:"・お給料：（　　　　　　　　　　　）", my:"လစာ：（　　　　　　　　　　　）", cat:"事前ガイダンス説明資料"},
+    {ja:"・働く期間：（　　　　）年（　　）月（　　）日 〜（　　　　）年（　　）月（　　）日", my:"အလုပ်ကာလ：（　　　　）〜（　　　　）", cat:"事前ガイダンス説明資料"},
+    {ja:"・アナタの資格で、できる仕事は法律で決まっています", my:"သင့်ရဲ့ဗီဇာအမျိုးအစားနဲ့ လုပ်နိုင်တဲ့အလုပ်တွေကို ဥပဒေက သတ်မှတ်ထားပါတယ်", cat:"事前ガイダンス説明資料"},
+    {ja:"・在留資格の変更や、日本に入るための手続きがあります", my:"နေထိုင်ခွင့်အမျိုးအစားပြောင်းဖို့နဲ့ ဂျပန်ဝင်ဖို့ လုပ်ရမယ့်လုပ်ထုံးလုပ်နည်းတွေ ရှိပါတယ်", cat:"事前ガイダンス説明資料"},
+    {ja:"・保証金は、もらいません", my:"အာမခံငွေ လုံးဝ မယူပါဘူး", cat:"事前ガイダンス説明資料"},
+    {ja:"・約束を破っても、罰金を取る契約はありません", my:"ကတိပျက်ရင်တောင် ဒဏ်ငွေယူမယ့်စာချုပ်မျိုး မရှိပါဘူး", cat:"事前ガイダンス説明資料"},
+    {ja:"・自分の国の会社にお金を払った場合は", my:"မိမိနိုင်ငံက ကုမ္ပဏီကို ငွေပေးထားရင်", cat:"事前ガイダンス説明資料"},
+    {ja:"・金額と内容を、よく理解してから払ってください", my:"ပမာဏနဲ့ အသေးစိတ်ကို ကောင်းကောင်းနားလည်မှ ပေးပါ", cat:"事前ガイダンス説明資料"},
+    {ja:"・支援にかかるお金は、アナタが払うことはありません", my:"ကူညီပေးမှုအတွက် ကုန်ကျစရိတ်ကို သင် ပေးစရာ မလိုပါဘူး", cat:"事前ガイダンス説明資料"},
+    {ja:"・日本に着いたとき、空港まで迎えに行きます", my:"ဂျပန်ရောက်တဲ့အခါ လေဆိပ်ကို ကြိုသွားပါမယ်", cat:"事前ガイダンス説明資料"},
+    {ja:"・会社か、住むところまで送ります", my:"ကုမ္ပဏီ ဒါမှမဟုတ် နေအိမ်အထိ ပို့ပေးပါမယ်", cat:"事前ガイダンス説明資料"},
+    {ja:"・帰国するとき、空港まで送ります", my:"ပြန်တဲ့အခါ လေဆိပ်အထိ ပို့ပေးပါမယ်", cat:"事前ガイダンス説明資料"},
+    {ja:"・保安検査場に入るまで、サポートします", my:"လုံခြုံရေးစစ်ဆေးရေးဂိတ် ဝင်တဲ့အထိ ကူညီပါမယ်", cat:"事前ガイダンス説明資料"},
+    {ja:"・不動産屋さんや部屋の情報を教えます", my:"အိမ်ခြံမြေအကျိုးဆောင်နဲ့ အခန်းအချက်အလက်တွေ ပြောပြပါမယ်", cat:"事前ガイダンス説明資料"},
+    {ja:"・必要なら、部屋を探すのに一緒に行きます", my:"လိုအပ်ရင် အခန်းရှာဖို့ အတူတူ လိုက်သွားပါမယ်", cat:"事前ガイダンス説明資料"},
+    {ja:"・連帯保証人が必要なときは、私たちが保証人になるか、緊急連絡先になります", my:"အာမခံလိုအပ်ရင် ကျွန်တော်တို့ကိုယ်တိုင် အာမခံ ဖြစ်ပေးမယ် ဒါမှမဟုတ် အရေးပေါ်ဆက်သွယ်ရမယ့်သူ ဖြစ်ပေးပါမယ်", cat:"事前ガイダンス説明資料"},
+    {ja:"・わかる言葉で、すぐに対応します", my:"နားလည်တဲ့ဘာသာစကားနဲ့ ချက်ချင်း ကူညီဖြေရှင်းပေးပါမယ်", cat:"事前ガイダンス説明資料"},
+    {ja:"・必要なアドバイスや案内もします", my:"လိုအပ်တဲ့အကြံဉာဏ်နဲ့ လမ်းညွှန်မှုလည်း ပေးပါမယ်", cat:"事前ガイダンス説明資料"},
+    {ja:"・必要なら、関係する役所も案内します", my:"လိုအပ်ရင် သက်ဆိုင်ရာရုံးကိုလည်း လမ်းညွှန်ပေးပါမယ်", cat:"事前ガイダンス説明資料"},
+    {ja:"・必要なら、一緒に行って手続きもサポートします", my:"လိုအပ်ရင် အတူတူလိုက်သွားပြီး လုပ်ထုံးလုပ်နည်း ကူညီပါမယ်", cat:"事前ガイダンス説明資料"},
+    {ja:"・担当者の名前：（　　　　　　　　　　　）", my:"တာဝန်ခံ နာမည်：（　　　　　　　　　　　）", cat:"事前ガイダンス説明資料"},
+    {ja:"・電話番号：（　　　　　　　　　　　）", my:"ဖုန်းနံပါတ်：（　　　　　　　　　　　）", cat:"事前ガイダンス説明資料"},
+    {ja:"・日本での生活全般のルールを教えます", my:"ဂျပန်မှာ နေထိုင်ရေးဆိုင်ရာ စည်းမျဉ်းတွေ အားလုံး ပြောပြပါမယ်", cat:"事前ガイダンス説明資料"},
+    {ja:"・役所への届出が必要なときは、一緒に手続きします", my:"ရုံးကို အကြောင်းကြားစရာလိုရင် အတူတူ လုပ်ပေးပါမယ်", cat:"事前ガイダンス説明資料"},
+    {ja:"・相談先・緊急連絡先の住所も教えます", my:"တိုင်ပင်ရမယ့်နေရာနဲ့ အရေးပေါ်ဆက်သွယ်ရမယ့်လိပ်စာလည်း ပြောပြပါမယ်", cat:"事前ガイダンス説明資料"},
+    {ja:"・必要なときに、病院を案内します。", my:"လိုအပ်တဲ့အခါ ဆေးရုံကို ညွှန်းပေးပါမယ်", cat:"事前ガイダンス説明資料"},
+    {ja:"・防災・防犯、急な病気のときの対応も教えます", my:"သဘာဝဘေးနဲ့ရာဇဝတ်မှုကာကွယ်ရေး၊ ရုတ်တရက်နာမကျန်းဖြစ်ရင် ဘယ်လိုလုပ်ရမလဲဆိုတာလည်း ပြောပြပါမယ်", cat:"事前ガイダンス説明資料"},
+    {ja:"・法律違反を見つけたときの対応方法も教えます", my:"ဥပဒေချိုးဖောက်တာတွေ့ရင် ဘယ်လိုလုပ်ရမလဲဆိုတာလည်း ပြောပြပါမယ်", cat:"事前ガイダンス説明資料"},
+    {ja:"・日本語教室や学校の情報を教えます", my:"ဂျပန်စာသင်ခန်းနဲ့ကျောင်းအချက်အလက်တွေ ပြောပြပါမယ်", cat:"事前ガイダンス説明資料"},
+    {ja:"・自習用の教材やオンライン講座の情報も教えます", my:"ကိုယ်တိုင်လေ့လာဖို့ စာအုပ်၊ အွန်လိုင်းသင်တန်း အချက်အလက်တွေလည်း ပြောပြပါမယ်", cat:"事前ガイダンス説明資料"},
+    {ja:"・希望があれば、日本語を勉強する機会を作ります", my:"လိုချင်ရင် ဂျပန်စာလေ့လာခွင့် စီစဉ်ပေးပါမယ်", cat:"事前ガイダンス説明資料"},
+    {ja:"・地域のお祭りやイベントの情報を教えます", my:"ဒေသက ပွဲတော်တွေနဲ့ အခမ်းအနားတွေ အချက်အလက် ပြောပြပါမယ်", cat:"事前ガイダンス説明資料"},
+    {ja:"・必要なら、参加の手続きもサポートします", my:"လိုအပ်ရင် ပါဝင်ဖို့ လုပ်ထုံးလုပ်နည်းကိုလည်း ကူညီပါမယ်", cat:"事前ガイダンス説明資料"},
+    {ja:"・必要なら一緒に行って、注意点も説明します", my:"လိုအပ်ရင် အတူတူလိုက်သွားပြီး သတိထားရမယ့်အချက်တွေလည်း ရှင်းပြပါမယ်", cat:"事前ガイダンス説明資料"},
+    {ja:"・会社の都合で辞めることになった場合、仕事をさがすサポートをします。", my:"ကုမ္ပဏီရဲ့အကြောင်းကြောင့် အလုပ်ထွက်ရရင် အလုပ်ရှာဖို့ ကူညီပါမယ်", cat:"事前ガイダンス説明資料"},
+    {ja:"・ハローワークなどを案内します。必要なら一緒に次の仕事を探します", my:"အလုပ်အကိုင်ရုံးတွေကို လမ်းညွှန်ပေးပါမယ်။ လိုအပ်ရင် အတူတူ အလုပ်ရှာပါမယ်", cat:"事前ガイダンス説明資料"},
+    {ja:"・アナタの希望や技能に合わせて、推薦状を作ります", my:"သင့်ရဲ့ဆန္ဒနဲ့ အရည်အချင်းနဲ့ ကိုက်ညီအောင် ထောက်ခံစာ ရေးပေးပါမယ်", cat:"事前ガイダンス説明資料"},
+    {ja:"・許可を得ている場合、就職先を紹介します", my:"ခွင့်ပြုချက်ရှိရင် အလုပ်ရာနေရာကို မိတ်ဆက်ပေးပါမယ်", cat:"事前ガイダンス説明資料"},
+    {ja:"・辞めるときに必要な手続きの情報も教えます", my:"အလုပ်ထွက်တဲ့အခါ လိုအပ်တဲ့လုပ်ထုံးလုပ်နည်း အချက်အလက်တွေလည်း ပြောပြပါမယ်", cat:"事前ガイダンス説明資料"},
+    {ja:"・3か月に1回以上、アナタと会社の担当者、それぞれと面談します", my:"၃လကို ၁ခါထက်မနည်း သင်နဲ့ ကုမ္ပဏီရဲ့တာဝန်ခံ နှစ်ဦးစလုံးနဲ့ တွေ့ဆုံမေးမြန်းပါမယ်", cat:"事前ガイダンス説明資料"},
+    {ja:"・生活オリエンテーションの内容を、もう一度確認します", my:"နေထိုင်ရေးအကြောင်း ပြောခဲ့တဲ့အချက်အလက်တွေကို ထပ်ပြီး အတည်ပြုပါမယ်", cat:"事前ガイダンス説明資料"},
+    {ja:"・労働について違反していることを知ったときは、労働基準監督署などに通報します", my:"အလုပ်နဲ့ပတ်သက်ပြီး ဥပဒေချိုးဖောက်တာ သိရင် အလုပ်သမားရေးရာရုံးကို အသိပေးပါမယ်", cat:"事前ガイダンス説明資料"},
+    {ja:"・なにか問題が発生した時は、入管に通報します", my:"ပြဿနာတစ်ခုခု ဖြစ်ရင် လူဝင်မှုကြီးကြပ်ရေးကို အသိပေးပါမယ်", cat:"事前ガイダンス説明資料"}
+  ];
+
+  function initLibrary(){
+    let lib = loadLibrary() || [];
+    const existingMy = new Set(lib.map(e=>e.my));
+    presets.forEach(p=>{
+      if(!existingMy.has(p.text)){
+        lib.push({my: p.text, ja: p.label, cat:'よく使うあいさつ'});
+        existingMy.add(p.text);
+      }
+    });
+    builtinPhrases.forEach(p=>{
+      if(!existingMy.has(p.my)){
+        lib.push({my: p.my, ja: p.ja, cat: p.cat});
+        existingMy.add(p.my);
+      }
+    });
+    saveLibrary(lib);
+    return lib;
+  }
+  let phraseLibrary = initLibrary();
+
+  function findMeaning(myText){
+    const hit = phraseLibrary.find(e=>e.my === myText);
+    return hit ? hit.ja : null;
+  }
+
+  let lastAutofillPhrase = phraseInput.value;
+
+  function refreshMeaningAutofill(){
+    const text = phraseInput.value.trim();
+    const phraseChanged = (text !== lastAutofillPhrase);
+    if(phraseChanged){
+      lastAutofillPhrase = text;
+      meaningInput.value = '';
+    }
+    if(!text){
+      meaningHint.textContent = '';
+      meaningHint.className = 'status-line';
+      return;
+    }
+    const known = findMeaning(text);
+    if(known){
+      if(!meaningInput.value.trim()) meaningInput.value = known;
+      meaningHint.textContent = '単語帳に登録済みのフレーズです。';
+      meaningHint.className = 'status-line ok';
+    }else{
+      meaningHint.textContent = 'このフレーズは単語帳に未登録です。意味を入力して「単語帳に保存」しておくと、次から自動で表示されます。';
+      meaningHint.className = 'status-line warn';
+    }
+  }
+
+  saveToLibraryBtn.addEventListener('click', ()=>{
+    const my = phraseInput.value.trim();
+    const ja = meaningInput.value.trim();
+    if(!my || !ja){
+      meaningHint.textContent = 'ミャンマー語の例文と、日本語の意味の両方を入力してから保存してください。';
+      meaningHint.className = 'status-line warn';
+      return;
+    }
+    const idx = phraseLibrary.findIndex(e=>e.my === my);
+    if(idx >= 0) phraseLibrary[idx].ja = ja;
+    else phraseLibrary.push({my, ja, cat:'自分で追加した単語'});
+    saveLibrary(phraseLibrary);
+    meaningHint.textContent = '単語帳に保存しました。';
+    meaningHint.className = 'status-line ok';
+    renderLibraryList(librarySearch.value.trim());
+  });
+
+  const categoryOrder = ['よく使うあいさつ', '支援計画書 基本語', '事前ガイダンス説明資料', '自分で追加した単語'];
+
+  function renderLibraryList(filter){
+    const q = (filter || '').trim().toLowerCase();
+    const items = phraseLibrary.filter(e=>{
+      if(!q) return true;
+      return e.ja.toLowerCase().includes(q) || e.my.toLowerCase().includes(q);
+    });
+    libraryList.innerHTML = '';
+    if(items.length === 0){
+      const empty = document.createElement('div');
+      empty.className = 'library-empty';
+      empty.textContent = '該当するフレーズがありません。';
+      libraryList.appendChild(empty);
+      return;
+    }
+
+    const groups = {};
+    items.forEach(e=>{
+      const cat = e.cat || 'その他';
+      if(!groups[cat]) groups[cat] = [];
+      groups[cat].push(e);
+    });
+    const orderedCats = [
+      ...categoryOrder.filter(c=>groups[c]),
+      ...Object.keys(groups).filter(c=>!categoryOrder.includes(c))
+    ];
+
+    orderedCats.forEach(cat=>{
+      const header = document.createElement('div');
+      header.className = 'library-cat-header';
+      header.textContent = cat + '（' + groups[cat].length + '）';
+      libraryList.appendChild(header);
+
+      groups[cat].forEach(e=>{
+        const row = document.createElement('div');
+        row.className = 'library-item';
+
+        const textWrap = document.createElement('div');
+        textWrap.className = 'lib-text';
+        const jaEl = document.createElement('div');
+        jaEl.className = 'lib-ja';
+        jaEl.textContent = e.ja;
+        const myEl = document.createElement('div');
+        myEl.className = 'lib-my';
+        myEl.textContent = e.my;
+        textWrap.appendChild(jaEl);
+        textWrap.appendChild(myEl);
+
+        const actions = document.createElement('div');
+        actions.className = 'lib-actions';
+        const useBtn = document.createElement('button');
+        useBtn.className = 'lib-btn use';
+        useBtn.textContent = '使う';
+        useBtn.addEventListener('click', ()=>{
+          phraseInput.value = e.my;
+          meaningInput.value = e.ja;
+          refreshCachedAudioUI();
+          refreshReferenceStatus();
+          refreshMeaningAutofill();
+        });
+        const delBtn = document.createElement('button');
+        delBtn.className = 'lib-btn del';
+        delBtn.textContent = '削除';
+        delBtn.addEventListener('click', ()=>{
+          phraseLibrary = phraseLibrary.filter(x=>x.my !== e.my);
+          saveLibrary(phraseLibrary);
+          renderLibraryList(librarySearch.value.trim());
+        });
+        actions.appendChild(useBtn);
+        actions.appendChild(delBtn);
+
+        row.appendChild(textWrap);
+        row.appendChild(actions);
+        libraryList.appendChild(row);
+      });
+    });
+  }
+
+  libraryToggleBtn.addEventListener('click', ()=>{
+    const isOpen = libraryPanel.classList.toggle('open');
+    if(isOpen) renderLibraryList(librarySearch.value.trim());
+  });
+  librarySearch.addEventListener('input', ()=>{ renderLibraryList(librarySearch.value.trim()); });
+
+  refreshMeaningAutofill();
 
   const googleTtsBtn = document.getElementById('googleTtsBtn');
   const googleTtsStatus = document.getElementById('googleTtsStatus');
@@ -821,8 +1121,9 @@
     comparisonStatus.className = cls;
   }
 
-  phraseInput.addEventListener('change', ()=>{ refreshCachedAudioUI(); refreshReferenceStatus(); });
-  phraseInput.addEventListener('blur', ()=>{ refreshCachedAudioUI(); refreshReferenceStatus(); });
+  phraseInput.addEventListener('change', ()=>{ refreshCachedAudioUI(); refreshReferenceStatus(); refreshMeaningAutofill(); });
+  phraseInput.addEventListener('blur', ()=>{ refreshCachedAudioUI(); refreshReferenceStatus(); refreshMeaningAutofill(); });
+  phraseInput.addEventListener('input', ()=>{ refreshMeaningAutofill(); });
   refreshCachedAudioUI();
   refreshReferenceStatus();
 
