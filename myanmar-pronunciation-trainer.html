@@ -153,6 +153,27 @@
   .audio-lib{
     margin-top:16px;padding-top:16px;border-top:1px dashed var(--line);
   }
+
+  .engine-row{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-top:4px;}
+  .engine-row label{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-soft);cursor:pointer;}
+
+  .azure-settings{
+    margin-top:12px;padding:14px;border:1px solid var(--line);border-radius:10px;
+    background:var(--paper-dim);display:none;
+  }
+  .azure-settings.open{display:block;}
+  .azure-settings label{display:block;font-size:12px;color:var(--ink-soft);margin-bottom:3px;}
+  .azure-settings input[type=text], .azure-settings input[type=password], .azure-settings select{
+    width:100%;padding:8px 10px;margin-bottom:10px;border:1px solid var(--line);border-radius:8px;
+    background:#fff;color:var(--ink);font-size:13px;box-sizing:border-box;
+  }
+  .azure-settings .fields-row{display:flex;gap:10px;flex-wrap:wrap;}
+  .azure-settings .fields-row > div{flex:1;min-width:140px;}
+
+  .warn-box{
+    font-size:12px;color:var(--warn);background:#fff8ea;border:1px solid var(--gold-soft);
+    border-radius:8px;padding:10px 12px;margin-top:10px;
+  }
 </style>
 </head>
 <body>
@@ -172,8 +193,37 @@
 
     <div class="row">
       <button class="action btn-lac" id="googleTtsBtn">🔊 Google翻訳の音声で再生</button>
+      <button class="action btn-ink" id="azureTtsBtn">🔷 Azure音声で再生</button>
+      <button class="action btn-outline" id="azureSettingsToggle" type="button">⚙ Azure設定</button>
     </div>
     <div class="status-line" id="googleTtsStatus">「Google翻訳の音声で再生」は登録不要ですぐ使えます（非公式のため将来使えなくなる可能性があります）。</div>
+    <div class="status-line" id="azureTtsStatus">Azure音声を使うには「⚙ Azure設定」からキーとリージョンを入力してください（この端末のブラウザ内にのみ保存されます）。</div>
+
+    <div class="azure-settings" id="azureSettingsPanel">
+      <div class="warn-box">
+        Azureのキーはこのブラウザ（この端末）にのみ保存され、GitHub上のファイルには一切書き込まれません。共有PCでは使用後に「キーを消去」を押してください。
+      </div>
+      <div class="fields-row">
+        <div>
+          <label>Azure Speech キー</label>
+          <input type="password" id="azureKeyInput" placeholder="キー1を貼り付け">
+        </div>
+        <div>
+          <label>リージョン</label>
+          <input type="text" id="azureRegionInput" placeholder="例：japaneast">
+        </div>
+      </div>
+      <label>声の種類</label>
+      <select id="azureVoiceSelect">
+        <option value="my-MM-NilarNeural">Nilar（女性）</option>
+        <option value="my-MM-ThihaNeural">Thiha（男性）</option>
+      </select>
+      <div class="row" style="margin-top:0;">
+        <button class="action btn-gold" id="azureSaveBtn">保存</button>
+        <button class="action btn-outline" id="azureClearBtn">キーを消去</button>
+      </div>
+      <div class="status-line" id="azureSettingsStatus"></div>
+    </div>
 
     <div class="row">
       <button class="action btn-outline" id="recordRefBtn">🎯 お手本の声をマイクで記録して比較用に保存（初回のみ）</button>
@@ -310,6 +360,123 @@
       googleTtsStatus.textContent = '再生に失敗しました：' + err.message + '（Googleの仕様変更や通信状況による可能性があります）';
       googleTtsStatus.className = 'status-line warn';
     });
+  });
+
+  // --- Azure Speech (Neural TTS) ---
+  const azureTtsBtn = document.getElementById('azureTtsBtn');
+  const azureTtsStatus = document.getElementById('azureTtsStatus');
+  const azureSettingsToggle = document.getElementById('azureSettingsToggle');
+  const azureSettingsPanel = document.getElementById('azureSettingsPanel');
+  const azureKeyInput = document.getElementById('azureKeyInput');
+  const azureRegionInput = document.getElementById('azureRegionInput');
+  const azureVoiceSelect = document.getElementById('azureVoiceSelect');
+  const azureSaveBtn = document.getElementById('azureSaveBtn');
+  const azureClearBtn = document.getElementById('azureClearBtn');
+  const azureSettingsStatus = document.getElementById('azureSettingsStatus');
+  let azureTtsAudio = null;
+
+  function loadAzureSettings(){
+    try{
+      const raw = localStorage.getItem('mpt:azureSettings');
+      if(!raw) return null;
+      return JSON.parse(raw);
+    }catch(e){ return null; }
+  }
+  function saveAzureSettings(obj){
+    try{ localStorage.setItem('mpt:azureSettings', JSON.stringify(obj)); }catch(e){}
+  }
+  function clearAzureSettings(){
+    try{ localStorage.removeItem('mpt:azureSettings'); }catch(e){}
+  }
+
+  (function initAzureSettingsUI(){
+    const saved = loadAzureSettings();
+    if(saved){
+      azureKeyInput.value = saved.key || '';
+      azureRegionInput.value = saved.region || '';
+      azureVoiceSelect.value = saved.voice || 'my-MM-NilarNeural';
+      azureTtsStatus.textContent = 'Azure設定が保存されています。「Azure音声で再生」をお使いいただけます。';
+      azureTtsStatus.className = 'status-line ok';
+    }
+  })();
+
+  azureSettingsToggle.addEventListener('click', ()=>{
+    azureSettingsPanel.classList.toggle('open');
+  });
+
+  azureSaveBtn.addEventListener('click', ()=>{
+    const key = azureKeyInput.value.trim();
+    const region = azureRegionInput.value.trim();
+    const voice = azureVoiceSelect.value;
+    if(!key || !region){
+      azureSettingsStatus.textContent = 'キーとリージョンの両方を入力してください。';
+      azureSettingsStatus.className = 'status-line warn';
+      return;
+    }
+    saveAzureSettings({key, region, voice});
+    azureSettingsStatus.textContent = '保存しました（この端末のブラウザ内のみ）。';
+    azureSettingsStatus.className = 'status-line ok';
+    azureTtsStatus.textContent = 'Azure設定が保存されています。「Azure音声で再生」をお使いいただけます。';
+    azureTtsStatus.className = 'status-line ok';
+  });
+
+  azureClearBtn.addEventListener('click', ()=>{
+    clearAzureSettings();
+    azureKeyInput.value = '';
+    azureRegionInput.value = '';
+    azureSettingsStatus.textContent = 'キーを消去しました。';
+    azureSettingsStatus.className = 'status-line';
+    azureTtsStatus.textContent = 'Azure音声を使うには「⚙ Azure設定」からキーとリージョンを入力してください（この端末のブラウザ内にのみ保存されます）。';
+    azureTtsStatus.className = 'status-line';
+  });
+
+  function escapeSsml(text){
+    return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  async function synthesizeWithAzure(text){
+    const settings = loadAzureSettings();
+    if(!settings || !settings.key || !settings.region){
+      throw new Error('Azure設定（キー・リージョン）が未入力です');
+    }
+    const ssml = '<speak version="1.0" xml:lang="my-MM"><voice name="' + settings.voice + '">' + escapeSsml(text) + '</voice></speak>';
+    const endpoint = 'https://' + settings.region + '.tts.speech.microsoft.com/cognitiveservices/v1';
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Ocp-Apim-Subscription-Key': settings.key,
+        'Content-Type': 'application/ssml+xml',
+        'X-Microsoft-OutputFormat': 'audio-16khz-128kbitrate-mono-mp3'
+      },
+      body: ssml
+    });
+    if(!res.ok){
+      const errText = await res.text().catch(()=>'');
+      throw new Error('HTTP ' + res.status + (errText ? '：' + errText.slice(0,200) : ''));
+    }
+    const blob = await res.blob();
+    return URL.createObjectURL(blob);
+  }
+
+  azureTtsBtn.addEventListener('click', async ()=>{
+    const text = phraseInput.value.trim();
+    if(!text) return;
+    if(azureTtsAudio){ azureTtsAudio.pause(); azureTtsAudio = null; }
+    azureTtsBtn.disabled = true;
+    azureTtsStatus.textContent = '音声を生成中…';
+    azureTtsStatus.className = 'status-line';
+    try{
+      const url = await synthesizeWithAzure(text);
+      azureTtsAudio = new Audio(url);
+      await azureTtsAudio.play();
+      azureTtsStatus.textContent = '再生しました（Azure Neural TTS：' + azureVoiceSelect.value + '）。';
+      azureTtsStatus.className = 'status-line ok';
+    }catch(err){
+      azureTtsStatus.textContent = '再生に失敗しました：' + err.message;
+      azureTtsStatus.className = 'status-line warn';
+    }finally{
+      azureTtsBtn.disabled = false;
+    }
   });
 
   const audioUpload = document.getElementById('audioUpload');
