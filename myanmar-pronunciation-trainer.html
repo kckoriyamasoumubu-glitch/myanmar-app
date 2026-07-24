@@ -225,6 +225,15 @@
       <div class="status-line" id="azureSettingsStatus"></div>
     </div>
 
+    <div class="row" style="margin-top:10px;">
+      <span style="font-size:13px;color:var(--ink-soft);">🎯記録・🔁続けて再生で使う音声：</span>
+      <label style="display:flex;align-items:center;gap:4px;font-size:13px;color:var(--ink-soft);cursor:pointer;">
+        <input type="radio" name="refEngine" value="google" id="refEngineGoogle" checked> Google
+      </label>
+      <label style="display:flex;align-items:center;gap:4px;font-size:13px;color:var(--ink-soft);cursor:pointer;">
+        <input type="radio" name="refEngine" value="azure" id="refEngineAzure"> Azure
+      </label>
+    </div>
     <div class="row">
       <button class="action btn-outline" id="recordRefBtn">🎯 お手本の声をマイクで記録して比較用に保存（初回のみ）</button>
     </div>
@@ -618,6 +627,20 @@
       return;
     }
 
+    const engine = (document.querySelector('input[name="refEngine"]:checked') || {}).value || 'google';
+    let refAudioUrl;
+    try{
+      refStatus.textContent = engine === 'azure' ? 'Azure音声を準備中…' : 'Google音声を準備中…';
+      refStatus.className = 'status-line';
+      refAudioUrl = engine === 'azure'
+        ? await synthesizeWithAzure(text)
+        : 'https://translate.google.com/translate_tts?ie=UTF-8&q=' + encodeURIComponent(text) + '&tl=my&client=tw-ob';
+    }catch(err){
+      refStatus.textContent = '音声の準備に失敗しました：' + err.message;
+      refStatus.className = 'status-line warn';
+      return;
+    }
+
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
     const src = ctx.createMediaStreamSource(stream);
     const refAnalyser = ctx.createAnalyser();
@@ -640,8 +663,7 @@
       requestAnimationFrame(loop);
     }
 
-    const url = 'https://translate.google.com/translate_tts?ie=UTF-8&q=' + encodeURIComponent(text) + '&tl=my&client=tw-ob';
-    const audioEl = new Audio(url);
+    const audioEl = new Audio(refAudioUrl);
     refStatus.textContent = '再生中…スピーカーの音をマイクで記録しています（周囲を静かにしてお待ちください）。';
     refStatus.className = 'status-line';
 
@@ -804,12 +826,23 @@
   refreshCachedAudioUI();
   refreshReferenceStatus();
 
-  playBothBtn.addEventListener('click', ()=>{
+  playBothBtn.addEventListener('click', async ()=>{
     const text = phraseInput.value.trim();
     if(!text || !playback.src) return;
     playBothBtn.disabled = true;
+    playBothStatus.textContent = 'お手本を準備中…';
+    const engine = (document.querySelector('input[name="refEngine"]:checked') || {}).value || 'google';
+    let url;
+    try{
+      url = engine === 'azure'
+        ? await synthesizeWithAzure(text)
+        : 'https://translate.google.com/translate_tts?ie=UTF-8&q=' + encodeURIComponent(text) + '&tl=my&client=tw-ob';
+    }catch(err){
+      playBothStatus.textContent = 'お手本の準備に失敗しました：' + err.message;
+      playBothBtn.disabled = false;
+      return;
+    }
     playBothStatus.textContent = 'お手本を再生中…';
-    const url = 'https://translate.google.com/translate_tts?ie=UTF-8&q=' + encodeURIComponent(text) + '&tl=my&client=tw-ob';
     const refAudio = new Audio(url);
     refAudio.referrerPolicy = 'no-referrer';
     refAudio.addEventListener('ended', ()=>{
