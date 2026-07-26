@@ -240,7 +240,8 @@
     </div>
     <div class="row" style="margin-top:8px;">
       <button class="action btn-gold" id="saveToLibraryBtn">📖 この組み合わせを単語帳に保存</button>
-      <button class="action btn-outline" id="libraryToggleBtn" type="button">📚 単語帳を開く</button>
+      <button class="action btn-outline" id="libraryToggleWorkBtn" type="button">📚 業務フレーズ集を開く</button>
+      <button class="action btn-outline" id="libraryToggleWeeklyBtn" type="button">📘 週別教材を開く</button>
     </div>
 
     <div class="library-panel" id="libraryPanel">
@@ -425,7 +426,8 @@
   const meaningHint = document.getElementById('meaningHint');
   const kanaHint = document.getElementById('kanaHint');
   const saveToLibraryBtn = document.getElementById('saveToLibraryBtn');
-  const libraryToggleBtn = document.getElementById('libraryToggleBtn');
+  const libraryToggleWorkBtn = document.getElementById('libraryToggleWorkBtn');
+  const libraryToggleWeeklyBtn = document.getElementById('libraryToggleWeeklyBtn');
   const libraryPanel = document.getElementById('libraryPanel');
   const librarySearch = document.getElementById('librarySearch');
   const libraryList = document.getElementById('libraryList');
@@ -444,24 +446,24 @@
 
   // 事前ガイダンス説明資料・支援計画書必須単語リストから抽出した組み込みフレーズ
   const builtinPhrases = [
-    {ja:"氏名", my:"အမည်အပြည့်အစုံ", cat:"支援計画書 基本語"},
-    {ja:"性別", my:"ကျား / မ", cat:"支援計画書 基本語"},
-    {ja:"生年月日", my:"မွေးနေ့သက္ကရာဇ်", cat:"支援計画書 基本語"},
-    {ja:"国籍・地域", my:"နိုင်ငံသား", cat:"支援計画書 基本語"},
-    {ja:"特定技能所属機関", my:"အထူးကျွမ်းကျင်လုပ်သားဆောင်ရွက်မည့်အဖွဲ့အစည်း", cat:"支援計画書 基本語"},
-    {ja:"氏名又は名称", my:"အမည်အပြည့်အစုံ သို့မဟုတ် အခေါ်အဝေါ်", cat:"支援計画書 基本語"},
-    {ja:"住所", my:"နေရပ်လိပ်စာ", cat:"支援計画書 基本語"},
-    {ja:"電話", my:"ဖုန်း", cat:"支援計画書 基本語"},
-    {ja:"代表者の氏名", my:"ကိုယ်စားလှယ် အမည်အပြည့်အစုံ", cat:"支援計画書 基本語"},
-    {ja:"登録支援機関", my:"မှတ်ပုံတင်ခြင်းအကူအညီပေးရေးအဖွဲ့အစည်း", cat:"支援計画書 基本語"},
-    {ja:"登録番号", my:"မှတ်ပုံတင်နံပါတ်", cat:"支援計画書 基本語"},
-    {ja:"登録年月日", my:"မှတ်ပုံတင်နေ့စွဲ", cat:"支援計画書 基本語"},
-    {ja:"支援責任者", my:"အကူအညီပေးရေးတာဝန်ခံ", cat:"支援計画書 基本語"},
-    {ja:"支援業務を行う事務所の所在地", my:"အကူအညီပေးရေးလုပ်ကိုင်မည့် ရုံးခန်း၏တည်နေရာ", cat:"支援計画書 基本語"},
-    {ja:"会社名", my:"ကုမ္ပဏီအမည်", cat:"事前ガイダンス説明資料"},
-    {ja:"仕事の内容", my:"လုပ်ရမယ့်အလုပ်", cat:"事前ガイダンス説明資料"},
-    {ja:"お給料", my:"လစာ", cat:"事前ガイダンス説明資料"},
-    {ja:"働く期間", my:"အလုပ်ကာလ", cat:"事前ガイダンス説明資料"},
+    {ja:"氏名", my:"အမည်အပြည့်အစုံ", kana:"アミー・アピッ・アソウン", warn:true, cat:"支援計画書 基本語"},
+    {ja:"性別", my:"ကျား / မ", kana:"チャー／マ", warn:true, cat:"支援計画書 基本語"},
+    {ja:"生年月日", my:"မွေးနေ့သက္ကရာဇ်", kana:"ムェイネイ・タッカヤッ", warn:true, cat:"支援計画書 基本語"},
+    {ja:"国籍・地域", my:"နိုင်ငံသား", kana:"ナインガンダー", warn:true, cat:"支援計画書 基本語"},
+    {ja:"特定技能所属機関", my:"အထူးကျွမ်းကျင်လုပ်သားဆောင်ရွက်မည့်အဖွဲ့အစည်း", kana:"アトゥー・チャンチン・ロッター・サウンユエッ・アピュエアスィー", warn:true, cat:"支援計画書 基本語"},
+    {ja:"氏名又は名称", my:"အမည်အပြည့်အစုံ သို့မဟုတ် အခေါ်အဝေါ်", kana:"アミー・アピッ・アソウン・トウマホウッ・アコーアウォー", warn:true, cat:"支援計画書 基本語"},
+    {ja:"住所", my:"နေရပ်လိပ်စာ", kana:"ネーヤッ・レイッサー", warn:true, cat:"支援計画書 基本語"},
+    {ja:"電話", my:"ဖုန်း", kana:"ポウン", warn:true, cat:"支援計画書 基本語"},
+    {ja:"代表者の氏名", my:"ကိုယ်စားလှယ် အမည်အပြည့်အစုံ", kana:"コーザーレ・アミー・アピッ・アソウン", warn:true, cat:"支援計画書 基本語"},
+    {ja:"登録支援機関", my:"မှတ်ပုံတင်ခြင်းအကူအညီပေးရေးအဖွဲ့အစည်း", kana:"マッポウンティンチン・アクーアニー・ペイイェー・アピュエアスィー", warn:true, cat:"支援計画書 基本語"},
+    {ja:"登録番号", my:"မှတ်ပုံတင်နံပါတ်", kana:"マッポウンティン・ナンバッ", warn:true, cat:"支援計画書 基本語"},
+    {ja:"登録年月日", my:"မှတ်ပုံတင်နေ့စွဲ", kana:"マッポウンティン・ネースゥエ", warn:true, cat:"支援計画書 基本語"},
+    {ja:"支援責任者", my:"အကူအညီပေးရေးတာဝန်ခံ", kana:"アクーアニー・ペイイェー・ターウンガン", warn:true, cat:"支援計画書 基本語"},
+    {ja:"支援業務を行う事務所の所在地", my:"အကူအညီပေးရေးလုပ်ကိုင်မည့် ရုံးခန်း၏တည်နေရာ", kana:"アクーアニー・ペイイェー・ロッカイン・ヨウンガン・イ・ティネーヤー", warn:true, cat:"支援計画書 基本語"},
+    {ja:"会社名", my:"ကုမ္ပဏီအမည်", kana:"コンパニー・アミー", warn:true, cat:"事前ガイダンス説明資料"},
+    {ja:"仕事の内容", my:"လုပ်ရမယ့်အလုပ်", kana:"ロッヤメ・アロッ", warn:true, cat:"事前ガイダンス説明資料"},
+    {ja:"お給料", my:"လစာ", kana:"ラザー", warn:true, cat:"事前ガイダンス説明資料"},
+    {ja:"働く期間", my:"အလုပ်ကာလ", kana:"アロッ・カーラ", warn:true, cat:"事前ガイダンス説明資料"},
     {ja:"・アナタの資格で、できる仕事は法律で決まっています", my:"သင့်ရဲ့ဗီဇာအမျိုးအစားနဲ့ လုပ်နိုင်တဲ့အလုပ်တွေကို ဥပဒေက သတ်မှတ်ထားပါတယ်", cat:"事前ガイダンス説明資料"},
     {ja:"・在留資格の変更や、日本に入るための手続きがあります", my:"နေထိုင်ခွင့်အမျိုးအစားပြောင်းဖို့နဲ့ ဂျပန်ဝင်ဖို့ လုပ်ရမယ့်လုပ်ထုံးလုပ်နည်းတွေ ရှိပါတယ်", cat:"事前ガイダンス説明資料"},
     {ja:"・保証金は、もらいません", my:"အာမခံငွေ လုံးဝ မယူပါဘူး", cat:"事前ガイダンス説明資料"},
@@ -480,8 +482,8 @@
     {ja:"・必要なアドバイスや案内もします", my:"လိုအပ်တဲ့အကြံဉာဏ်နဲ့ လမ်းညွှန်မှုလည်း ပေးပါမယ်", cat:"事前ガイダンス説明資料"},
     {ja:"・必要なら、関係する役所も案内します", my:"လိုအပ်ရင် သက်ဆိုင်ရာရုံးကိုလည်း လမ်းညွှန်ပေးပါမယ်", cat:"事前ガイダンス説明資料"},
     {ja:"・必要なら、一緒に行って手続きもサポートします", my:"လိုအပ်ရင် အတူတူလိုက်သွားပြီး လုပ်ထုံးလုပ်နည်း ကူညီပါမယ်", cat:"事前ガイダンス説明資料"},
-    {ja:"担当者の名前", my:"တာဝန်ခံ နာမည်", cat:"事前ガイダンス説明資料"},
-    {ja:"電話番号", my:"ဖုန်းနံပါတ်", cat:"事前ガイダンス説明資料"},
+    {ja:"担当者の名前", my:"တာဝန်ခံ နာမည်", kana:"ターウンガン・ナメー", warn:true, cat:"事前ガイダンス説明資料"},
+    {ja:"電話番号", my:"ဖုန်းနံပါတ်", kana:"ポウン・ナンバッ", warn:true, cat:"事前ガイダンス説明資料"},
     {ja:"・日本での生活全般のルールを教えます", my:"ဂျပန်မှာ နေထိုင်ရေးဆိုင်ရာ စည်းမျဉ်းတွေ အားလုံး ပြောပြပါမယ်", cat:"事前ガイダンス説明資料"},
     {ja:"・役所への届出が必要なときは、一緒に手続きします", my:"ရုံးကို အကြောင်းကြားစရာလိုရင် အတူတူ လုပ်ပေးပါမယ်", cat:"事前ガイダンス説明資料"},
     {ja:"・相談先・緊急連絡先の住所も教えます", my:"တိုင်ပင်ရမယ့်နေရာနဲ့ အရေးပေါ်ဆက်သွယ်ရမယ့်လိပ်စာလည်း ပြောပြပါမယ်", cat:"事前ガイダンス説明資料"},
@@ -595,6 +597,16 @@
     lib = lib.filter(e=> !placeholderPattern.test(e.my));
 
     const existingMy = new Set(lib.map(e=>e.my));
+
+    // 既存保存データにカタカナが未設定の場合、組み込みデータのカタカナで補完する
+    const builtinByMy = {};
+    builtinPhrases.forEach(p=>{ builtinByMy[p.my] = p; });
+    lib.forEach(e=>{
+      if(!e.kana && builtinByMy[e.my] && builtinByMy[e.my].kana){
+        e.kana = builtinByMy[e.my].kana;
+        e.warn = !!builtinByMy[e.my].warn;
+      }
+    });
     presets.forEach(p=>{
       if(!existingMy.has(p.text)){
         lib.push({my: p.text, ja: p.label, cat:'よく使うあいさつ'});
@@ -603,7 +615,7 @@
     });
     builtinPhrases.forEach(p=>{
       if(!existingMy.has(p.my)){
-        lib.push({my: p.my, ja: p.ja, cat: p.cat});
+        lib.push({my: p.my, ja: p.ja, kana: p.kana, warn: !!p.warn, cat: p.cat});
         existingMy.add(p.my);
       }
     });
@@ -687,9 +699,19 @@
     '自分で追加した単語'
   ];
 
+  const workCats = ['よく使うあいさつ', '支援計画書 基本語', '事前ガイダンス説明資料', '自分で追加した単語'];
+  const weeklyCats = [
+    '1週目：発音・挨拶・自己紹介', '2週目：数字・日付・時間', '3週目：特定技能制度の基本語彙',
+    '4週目：生活支援フレーズ①（住居・銀行・役所）', '5週目：生活支援フレーズ②（医療・緊急時）',
+    '6週目：就業条件・給与フレーズ', '7〜8週目：面談ロールプレイ用テンプレート文'
+  ];
+  let currentLibraryScope = 'work';
+
   function renderLibraryList(filter){
     const q = (filter || '').trim().toLowerCase();
+    const scopeCats = currentLibraryScope === 'weekly' ? weeklyCats : workCats;
     const items = phraseLibrary.filter(e=>{
+      if(!scopeCats.includes(e.cat || 'その他')) return false;
       if(!q) return true;
       return e.ja.toLowerCase().includes(q) || e.my.toLowerCase().includes(q);
     });
@@ -764,7 +786,23 @@
     });
   }
 
-  libraryToggleBtn.addEventListener('click', ()=>{
+  libraryToggleWorkBtn.addEventListener('click', ()=>{
+    if(currentLibraryScope !== 'work' && libraryPanel.classList.contains('open')){
+      currentLibraryScope = 'work';
+      renderLibraryList(librarySearch.value.trim());
+      return;
+    }
+    currentLibraryScope = 'work';
+    const isOpen = libraryPanel.classList.toggle('open');
+    if(isOpen) renderLibraryList(librarySearch.value.trim());
+  });
+  libraryToggleWeeklyBtn.addEventListener('click', ()=>{
+    if(currentLibraryScope !== 'weekly' && libraryPanel.classList.contains('open')){
+      currentLibraryScope = 'weekly';
+      renderLibraryList(librarySearch.value.trim());
+      return;
+    }
+    currentLibraryScope = 'weekly';
     const isOpen = libraryPanel.classList.toggle('open');
     if(isOpen) renderLibraryList(librarySearch.value.trim());
   });
