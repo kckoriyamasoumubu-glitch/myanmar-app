@@ -508,7 +508,6 @@
   ];
 
   // 「ミャンマー語週別フレーズ教材」（2ヶ月集中スピーキングプログラム）由来のフレーズ
-  // カタカナ読みは目安であり、⚠️マークの語句は使用前に必ずネイティブ・講師に確認すること
   const weeklyPhrases = [
     {ja:"こんにちは／おはよう／こんばんは", my:"မင်္ဂလာပါ", kana:"ミンガラーバー", cat:"1週目：発音・挨拶・自己紹介"},
     {ja:"お元気ですか？", my:"နေကောင်းလား", kana:"ネーカウンラー", cat:"1週目：発音・挨拶・自己紹介"},
@@ -591,14 +590,11 @@
 
   function initLibrary(){
     let lib = loadLibrary() || [];
-    // 過去バージョンで登録された「：（　　　）」等の穴埋め空欄付きエントリは
-    // 発音練習の妨げになるため、自動的に取り除く（クリーンな組み込みデータで再登録される）
     const placeholderPattern = /　{2,}|：（|〜（/;
     lib = lib.filter(e=> !placeholderPattern.test(e.my));
 
     const existingMy = new Set(lib.map(e=>e.my));
 
-    // 既存保存データにカタカナが未設定の場合、組み込みデータのカタカナで補完する
     const builtinByMy = {};
     builtinPhrases.forEach(p=>{ builtinByMy[p.my] = p; });
     lib.forEach(e=>{
@@ -660,8 +656,8 @@
       meaningHint.textContent = '単語帳に登録済みのフレーズです。';
       meaningHint.className = 'status-line ok';
       if(entry.kana){
-        kanaHint.textContent = '読み方（カタカナ目安）：' + entry.kana + (entry.warn ? '　⚠️要確認（発音・意味は必ずネイティブ・講師に確認してから業務で使用してください）' : '');
-        kanaHint.className = entry.warn ? 'status-line warn' : 'status-line ok';
+        kanaHint.textContent = '読み方（カタカナ目安）：' + entry.kana;
+        kanaHint.className = 'status-line ok';
       }else{
         kanaHint.textContent = '';
         kanaHint.className = 'status-line';
@@ -752,7 +748,7 @@
         jaEl.textContent = e.ja;
         const myEl = document.createElement('div');
         myEl.className = 'lib-my';
-        myEl.textContent = e.my + (e.kana ? '　（' + e.kana + '）' : '') + (e.warn ? '　⚠️要確認' : '');
+        myEl.textContent = e.my + (e.kana ? '　（' + e.kana + '）' : '');
         textWrap.appendChild(jaEl);
         textWrap.appendChild(myEl);
 
