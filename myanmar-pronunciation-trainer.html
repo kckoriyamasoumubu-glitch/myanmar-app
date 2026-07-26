@@ -236,6 +236,7 @@
       <label>日本語の意味（メモ・任意）</label>
       <input type="text" id="meaningInput" placeholder="例：ありがとうございます">
       <div class="status-line" id="meaningHint"></div>
+      <div class="status-line" id="kanaHint" style="font-size:15px;"></div>
     </div>
     <div class="row" style="margin-top:8px;">
       <button class="action btn-gold" id="saveToLibraryBtn">📖 この組み合わせを単語帳に保存</button>
@@ -422,6 +423,7 @@
   // --- 単語帳（ミャンマー語と日本語の意味のペアを保存） ---
   const meaningInput = document.getElementById('meaningInput');
   const meaningHint = document.getElementById('meaningHint');
+  const kanaHint = document.getElementById('kanaHint');
   const saveToLibraryBtn = document.getElementById('saveToLibraryBtn');
   const libraryToggleBtn = document.getElementById('libraryToggleBtn');
   const libraryPanel = document.getElementById('libraryPanel');
@@ -503,6 +505,88 @@
     {ja:"・なにか問題が発生した時は、入管に通報します", my:"ပြဿနာတစ်ခုခု ဖြစ်ရင် လူဝင်မှုကြီးကြပ်ရေးကို အသိပေးပါမယ်", cat:"事前ガイダンス説明資料"}
   ];
 
+  // 「ミャンマー語週別フレーズ教材」（2ヶ月集中スピーキングプログラム）由来のフレーズ
+  // カタカナ読みは目安であり、⚠️マークの語句は使用前に必ずネイティブ・講師に確認すること
+  const weeklyPhrases = [
+    {ja:"こんにちは／おはよう／こんばんは", my:"မင်္ဂလာပါ", kana:"ミンガラーバー", cat:"1週目：発音・挨拶・自己紹介"},
+    {ja:"お元気ですか？", my:"နေကောင်းလား", kana:"ネーカウンラー", cat:"1週目：発音・挨拶・自己紹介"},
+    {ja:"元気です", my:"နေကောင်းပါတယ်", kana:"ネーカウンバーデー", cat:"1週目：発音・挨拶・自己紹介"},
+    {ja:"ありがとうございます", my:"ကျေးဇူးတင်ပါတယ်", kana:"チェーズータンバーデー", cat:"1週目：発音・挨拶・自己紹介"},
+    {ja:"どういたしまして", my:"ရပါတယ်", kana:"ヤーバーデー", cat:"1週目：発音・挨拶・自己紹介"},
+    {ja:"すみません（謝罪）", my:"တောင်းပန်ပါတယ်", kana:"タウンパンバーデー", cat:"1週目：発音・挨拶・自己紹介"},
+    {ja:"はい", my:"ဟုတ်ကဲ့", kana:"ホウッケー", cat:"1週目：発音・挨拶・自己紹介"},
+    {ja:"いいえ", my:"မဟုတ်ဘူး", kana:"マホウッブー", cat:"1週目：発音・挨拶・自己紹介"},
+    {ja:"お名前は何ですか？", my:"နာမည်ဘယ်လိုခေါ်လဲ", kana:"ナメー・ベーロー・ゴウレー", cat:"1週目：発音・挨拶・自己紹介"},
+    {ja:"私の名前は～です", my:"ကျွန်တော်/ကျွန်မ နာမည်က～ပါ", kana:"チュントー／チュンマ　ナメーガ～バー（男性/女性で主語が変化）", cat:"1週目：発音・挨拶・自己紹介"},
+    {ja:"私は日本人です", my:"ကျွန်တော်/ကျွန်မ ဂျပန်လူမျိုးပါ", kana:"チュントー／チュンマ　ジャパンルーミョーバー", cat:"1週目：発音・挨拶・自己紹介"},
+    {ja:"よろしくお願いします", my:"သိပ်ဝမ်းသာပါတယ်", kana:"テイッ・ワンター・バーデー", cat:"1週目：発音・挨拶・自己紹介"},
+
+    {ja:"1", my:"တစ်", kana:"ティッ", cat:"2週目：数字・日付・時間"},
+    {ja:"2", my:"နှစ်", kana:"ニッ", cat:"2週目：数字・日付・時間"},
+    {ja:"3", my:"သုံး", kana:"トウン", cat:"2週目：数字・日付・時間"},
+    {ja:"4", my:"လေး", kana:"レー", cat:"2週目：数字・日付・時間"},
+    {ja:"5", my:"ငါး", kana:"ンガー", cat:"2週目：数字・日付・時間"},
+    {ja:"6", my:"ခြောက်", kana:"チャウッ", cat:"2週目：数字・日付・時間"},
+    {ja:"7", my:"ခုနစ်", kana:"クナッ", cat:"2週目：数字・日付・時間"},
+    {ja:"8", my:"ရှစ်", kana:"シッ", cat:"2週目：数字・日付・時間"},
+    {ja:"9", my:"ကိုး", kana:"コー", cat:"2週目：数字・日付・時間"},
+    {ja:"10", my:"တစ်ဆယ်", kana:"タセー", cat:"2週目：数字・日付・時間"},
+    {ja:"今日", my:"ဒီနေ့", kana:"ディネイ", cat:"2週目：数字・日付・時間"},
+    {ja:"明日", my:"မနက်ဖြန်", kana:"マネッピャン", cat:"2週目：数字・日付・時間"},
+    {ja:"昨日", my:"မနေ့က", kana:"マネイガ", cat:"2週目：数字・日付・時間"},
+    {ja:"何時ですか？", my:"ဘယ်နှစ်နာရီလဲ", kana:"ベーニッ・ナーイー・レー", cat:"2週目：数字・日付・時間"},
+    {ja:"～時に面談があります", my:"～နာရီမှာ တွေ့ဆုံမှု ရှိပါတယ်", kana:"～ナーイー・マー・トゥエソウンフー・シーバーデー", warn:true, cat:"2週目：数字・日付・時間"},
+
+    {ja:"在留資格", my:"နေထိုင်ခွင့်အဆင့်အတန်း", kana:"ネータインクウィン・アシンアタン", warn:true, cat:"3週目：特定技能制度の基本語彙"},
+    {ja:"特定技能", my:"အထူးကျွမ်းကျင်မှု", kana:"アトゥー・チャンチンフー", warn:true, cat:"3週目：特定技能制度の基本語彙"},
+    {ja:"雇用契約", my:"အလုပ်ခန့်အပ်ခြင်းစာချုပ်", kana:"アロッ・カンアッ・チンザーチョウ", warn:true, cat:"3週目：特定技能制度の基本語彙"},
+    {ja:"登録支援機関（簡易表現・要講師確認）", my:"မှတ်ပုံတင်ထားသော ပံ့ပိုးရေးအဖွဲ့အစည်း", kana:"フマットン・ダウ・パンポーイェー", warn:true, cat:"3週目：特定技能制度の基本語彙"},
+    {ja:"会社", my:"ကုမ္ပဏီ", kana:"コンパニー", cat:"3週目：特定技能制度の基本語彙"},
+    {ja:"仕事", my:"အလုပ်", kana:"アロッ", cat:"3週目：特定技能制度の基本語彙"},
+    {ja:"給料", my:"လစာ", kana:"ラザー", cat:"3週目：特定技能制度の基本語彙"},
+    {ja:"休み", my:"အနားယူ", kana:"アナーユー", cat:"3週目：特定技能制度の基本語彙"},
+    {ja:"契約書", my:"စာချုပ်", kana:"ザーチョウ", cat:"3週目：特定技能制度の基本語彙"},
+    {ja:"サインしてください", my:"လက်မှတ်ထိုးပေးပါ", kana:"レッマッ・トーベーバー", cat:"3週目：特定技能制度の基本語彙"},
+
+    {ja:"住所", my:"လိပ်စာ", kana:"レイッサー", cat:"4週目：生活支援フレーズ①（住居・銀行・役所）"},
+    {ja:"ここに住んでいます", my:"ဒီမှာနေပါတယ်", kana:"ディーマー・ネーバーデー", cat:"4週目：生活支援フレーズ①（住居・銀行・役所）"},
+    {ja:"銀行", my:"ဘဏ်", kana:"バン", cat:"4週目：生活支援フレーズ①（住居・銀行・役所）"},
+    {ja:"口座", my:"အကောင့်", kana:"アカウン", cat:"4週目：生活支援フレーズ①（住居・銀行・役所）"},
+    {ja:"お金", my:"ပိုက်ဆံ", kana:"パイッサン", cat:"4週目：生活支援フレーズ①（住居・銀行・役所）"},
+    {ja:"役所", my:"အစိုးရရုံး", kana:"アソーヤ・ヨウン", cat:"4週目：生活支援フレーズ①（住居・銀行・役所）"},
+    {ja:"書類", my:"စာရွက်စာတမ်း", kana:"サーユエッ・サータン", cat:"4週目：生活支援フレーズ①（住居・銀行・役所）"},
+    {ja:"必要です", my:"လိုအပ်ပါတယ်", kana:"ロー・アッ・バーデー", cat:"4週目：生活支援フレーズ①（住居・銀行・役所）"},
+    {ja:"何か問題がありますか？", my:"ပြဿနာတစ်ခုခုရှိလား", kana:"ピャッサナー・タカウ・シーラー", cat:"4週目：生活支援フレーズ①（住居・銀行・役所）"},
+    {ja:"大丈夫です", my:"ကိစ္စမရှိပါဘူး", kana:"ケイッサ・マシー・バーブー", cat:"4週目：生活支援フレーズ①（住居・銀行・役所）"},
+
+    {ja:"病院", my:"ဆေးရုံ", kana:"セーヨウン", cat:"5週目：生活支援フレーズ②（医療・緊急時）"},
+    {ja:"具合が悪いです", my:"ကျန်းမာရေးမကောင်းဘူး", kana:"チャンマーイェー・マカウンブー", cat:"5週目：生活支援フレーズ②（医療・緊急時）"},
+    {ja:"熱があります", my:"ဖျားနေတယ်", kana:"ピャーネーデー", cat:"5週目：生活支援フレーズ②（医療・緊急時）"},
+    {ja:"痛いです", my:"နာတယ်", kana:"ナーデー", cat:"5週目：生活支援フレーズ②（医療・緊急時）"},
+    {ja:"薬", my:"ဆေး", kana:"セー", cat:"5週目：生活支援フレーズ②（医療・緊急時）"},
+    {ja:"救急車", my:"အရေးပေါ်ကား", kana:"アイェーボー・カー", cat:"5週目：生活支援フレーズ②（医療・緊急時）"},
+    {ja:"助けてください", my:"ကူညီပေးပါ", kana:"クーニー・ベーバー", cat:"5週目：生活支援フレーズ②（医療・緊急時）"},
+    {ja:"警察", my:"ရဲ", kana:"イェー", cat:"5週目：生活支援フレーズ②（医療・緊急時）"},
+    {ja:"大丈夫ですか？", my:"ကောင်းလား", kana:"カウンラー", cat:"5週目：生活支援フレーズ②（医療・緊急時）"},
+
+    {ja:"労働時間", my:"အလုပ်ချိန်", kana:"アロッ・チェイン", cat:"6週目：就業条件・給与フレーズ"},
+    {ja:"残業", my:"အချိန်ပို", kana:"アチェイン・ポー", cat:"6週目：就業条件・給与フレーズ"},
+    {ja:"休日", my:"ပိတ်ရက်", kana:"ペイッイェッ", cat:"6週目：就業条件・給与フレーズ"},
+    {ja:"給料日", my:"လစာရက်", kana:"ラザー・イェッ", cat:"6週目：就業条件・給与フレーズ"},
+    {ja:"有給休暇", my:"လစာပါခွင့်", kana:"ラザーパー・クウィン", warn:true, cat:"6週目：就業条件・給与フレーズ"},
+    {ja:"保険", my:"အာမခံ", kana:"アーマカン", cat:"6週目：就業条件・給与フレーズ"},
+    {ja:"税金", my:"အခွန်", kana:"アクウン", cat:"6週目：就業条件・給与フレーズ"},
+    {ja:"質問はありますか？", my:"မေးခွန်းရှိလား", kana:"メーカウン・シーラー", cat:"6週目：就業条件・給与フレーズ"},
+    {ja:"分かりました", my:"နားလည်ပါတယ်", kana:"ナーレー・バーデー", cat:"6週目：就業条件・給与フレーズ"},
+    {ja:"分かりません", my:"နားမလည်ဘူး", kana:"ナーマレー・ブー", cat:"6週目：就業条件・給与フレーズ"},
+
+    {ja:"（面談開始）今日は面談を始めます", my:"ဒီနေ့ တွေ့ဆုံမှု စပါမယ်", kana:"ディネイ・トゥエソウンフー・サーバーメー", warn:true, cat:"7〜8週目：面談ロールプレイ用テンプレート文"},
+    {ja:"（体調確認）体調はどうですか？", my:"ကျန်းမာရေးဘယ်လိုလဲ", kana:"チャンマーイェー・ベーローレー", cat:"7〜8週目：面談ロールプレイ用テンプレート文"},
+    {ja:"（仕事確認）仕事は大変ではないですか？", my:"အလုပ်ခက်နေလား", kana:"アロッ・ケネーラー", cat:"7〜8週目：面談ロールプレイ用テンプレート文"},
+    {ja:"（悩み確認）何か困っていることはありますか？", my:"အခက်အခဲတစ်ခုခု ရှိလား", kana:"アケッアケー・タカウ・シーラー", cat:"7〜8週目：面談ロールプレイ用テンプレート文"},
+    {ja:"（締めの言葉）何かあればいつでも連絡してください", my:"တစ်ခုခုရှိရင် အချိန်မရွေး ဆက်သွယ်ပါ", kana:"タカウシーイン・アチェイン・マユエ・セットゥエバー", cat:"7〜8週目：面談ロールプレイ用テンプレート文"}
+  ];
+
   function initLibrary(){
     let lib = loadLibrary() || [];
     // 過去バージョンで登録された「：（　　　）」等の穴埋め空欄付きエントリは
@@ -523,13 +607,22 @@
         existingMy.add(p.my);
       }
     });
+    weeklyPhrases.forEach(p=>{
+      if(!existingMy.has(p.my)){
+        lib.push({my: p.my, ja: p.ja, kana: p.kana, warn: !!p.warn, cat: p.cat});
+        existingMy.add(p.my);
+      }
+    });
     saveLibrary(lib);
     return lib;
   }
   let phraseLibrary = initLibrary();
 
+  function findEntry(myText){
+    return phraseLibrary.find(e=>e.my === myText) || null;
+  }
   function findMeaning(myText){
-    const hit = phraseLibrary.find(e=>e.my === myText);
+    const hit = findEntry(myText);
     return hit ? hit.ja : null;
   }
 
@@ -545,16 +638,27 @@
     if(!text){
       meaningHint.textContent = '';
       meaningHint.className = 'status-line';
+      kanaHint.textContent = '';
+      kanaHint.className = 'status-line';
       return;
     }
-    const known = findMeaning(text);
-    if(known){
-      if(!meaningInput.value.trim()) meaningInput.value = known;
+    const entry = findEntry(text);
+    if(entry){
+      if(!meaningInput.value.trim()) meaningInput.value = entry.ja;
       meaningHint.textContent = '単語帳に登録済みのフレーズです。';
       meaningHint.className = 'status-line ok';
+      if(entry.kana){
+        kanaHint.textContent = '読み方（カタカナ目安）：' + entry.kana + (entry.warn ? '　⚠️要確認（発音・意味は必ずネイティブ・講師に確認してから業務で使用してください）' : '');
+        kanaHint.className = entry.warn ? 'status-line warn' : 'status-line ok';
+      }else{
+        kanaHint.textContent = '';
+        kanaHint.className = 'status-line';
+      }
     }else{
       meaningHint.textContent = 'このフレーズは単語帳に未登録です。意味を入力して「単語帳に保存」しておくと、次から自動で表示されます。';
       meaningHint.className = 'status-line warn';
+      kanaHint.textContent = '';
+      kanaHint.className = 'status-line';
     }
   }
 
@@ -575,7 +679,13 @@
     renderLibraryList(librarySearch.value.trim());
   });
 
-  const categoryOrder = ['よく使うあいさつ', '支援計画書 基本語', '事前ガイダンス説明資料', '自分で追加した単語'];
+  const categoryOrder = [
+    'よく使うあいさつ', '支援計画書 基本語', '事前ガイダンス説明資料',
+    '1週目：発音・挨拶・自己紹介', '2週目：数字・日付・時間', '3週目：特定技能制度の基本語彙',
+    '4週目：生活支援フレーズ①（住居・銀行・役所）', '5週目：生活支援フレーズ②（医療・緊急時）',
+    '6週目：就業条件・給与フレーズ', '7〜8週目：面談ロールプレイ用テンプレート文',
+    '自分で追加した単語'
+  ];
 
   function renderLibraryList(filter){
     const q = (filter || '').trim().toLowerCase();
@@ -620,7 +730,7 @@
         jaEl.textContent = e.ja;
         const myEl = document.createElement('div');
         myEl.className = 'lib-my';
-        myEl.textContent = e.my;
+        myEl.textContent = e.my + (e.kana ? '　（' + e.kana + '）' : '') + (e.warn ? '　⚠️要確認' : '');
         textWrap.appendChild(jaEl);
         textWrap.appendChild(myEl);
 
